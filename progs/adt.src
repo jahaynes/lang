@@ -1,0 +1,7 @@
+data Dir = Up
+         | Down
+
+main =
+  Up (Down 1 2) 3
+
+-- 2

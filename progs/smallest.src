@@ -1,0 +1,15 @@
+data List a = Nil
+            | Cons a (List a)
+
+smallest ys =
+  let go a xs = 
+    xs (Cons a Nil)
+       (\h t. if (< h a) 
+                then go h t
+                else go a t) in
+  ys Nil
+     (\h t. go h t)
+
+main = (smallest (Cons 7 (Cons 1 (Cons 3 (Cons 2 Nil)))))
+           "none"
+           (\h t. show h)

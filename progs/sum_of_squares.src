@@ -1,0 +1,10 @@
+times a b = * a b
+plus  a b = + a b
+
+sum_of_squares x y =
+  plus
+    (times x x)
+      (times y y)
+
+main = 
+  sum_of_squares 3 4

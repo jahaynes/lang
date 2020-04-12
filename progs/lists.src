@@ -1,0 +1,50 @@
+data List = Nil | Cons a List
+
+nats =
+  let go n =
+    Cons n (go (+ 1 n)) in
+  go 0
+
+listTake m ys =
+  let go n xs =
+    if (== 0 n)
+      then Nil
+      else xs Nil (\h t. Cons h (go (- n 1) t)) in
+  go m ys
+
+listMap f ys =
+  let go xs =
+    xs Nil (\h t. Cons (f h) (go t)) in
+  go ys
+
+listAppend as bs =
+  let go xs ys =
+    xs ys (\h t. Cons h (go t ys)) in
+  go as bs
+
+listConcat yss =
+  let go xss =
+    xss Nil (\hs ts. listAppend hs (go ts)) in
+  go yss
+
+listBind mf ys =
+  let go xs =
+    xs Nil (\h t. let hs = mf h in Cons hs (go t)) in
+    listConcat (go ys)
+
+listShow ys =
+  let go first acc xs =
+    let sep = if first then "" else ", " in
+    xs (++ acc "]") (\h t. go False (++ acc (++ sep (show h))) t) in
+  go True "[" ys
+
+duplicate x = Cons x (Cons x Nil)
+
+main =
+  listShow (
+    listMap (\x. * 3 x) (
+      listBind duplicate (
+        listTake 10 nats
+      )
+    )
+  )

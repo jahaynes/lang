@@ -1,0 +1,6 @@
+a x = if >= 1 2 then 1 else 0
+b x = if >  3 4 then 1 else 0
+c x = if <= 5 6 then 1 else 0
+d x = if <  7 8 then 1 else 0
+
+main = + (a 0) (+ (b 0) (+ (c 0) (d 0)))

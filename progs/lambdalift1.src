@@ -1,0 +1,9 @@
+
+fac free m = 
+  let go_fac acc n =
+    if (== 0 n)
+      then acc
+      else go_fac (* n acc) (- (+ free n) 1)
+  in go_fac 1 m
+
+main = fac 0 3

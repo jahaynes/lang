@@ -1,0 +1,12 @@
+data Maybe a = Nothing
+             | Just a
+
+fmap f mx =
+  mx Nothing (\x. Just (f x))
+
+bind f mx =
+  mx Nothing f
+
+main = (bind (\x. Just (+ 1 x)) (Just 3))
+         0
+         (\i. i)

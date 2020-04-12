@@ -1,0 +1,31 @@
+z f = (\x. f (\v. x x v)) (\x. f (\v. x x v))
+
+data List a = Nil
+            | Cons a List
+
+-- Infinite List
+twosfix f = Cons 2 f
+
+-- Folding
+foldrfix f k d xs =
+  xs d (\h t. k h (f k d t))
+
+foldr k d xs = z foldrfix k d xs
+
+-- Take
+takefix f n acc xs =
+  if == 0 n
+    then acc
+    else xs Nil
+            (\h t. f (- n 1) (Cons h acc) t)
+
+take x = z takefix x Nil
+
+main =
+
+  let twos = z twosfix
+
+  in
+
+  foldr (\a b. + a b) 0 (take 4 twos)
+       

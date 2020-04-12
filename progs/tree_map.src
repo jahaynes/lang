@@ -1,0 +1,56 @@
+
+data List = Nil
+          | Cons a List
+
+data Tree = Empty
+          | Tree a Tree Tree
+
+data Tuple = Tuple k v
+
+showTuple ab =
+  ab (\a b. ++ (++ (show a) " -> ") (show b))
+
+data Maybe = Nothing
+           | Just a
+
+showMaybe m =
+  m "Nothing"
+    (\a. ++ "Just " (show a))
+
+insert k v tree =
+    tree (Tree (Tuple k v) Empty Empty)
+         (\a l r. if (a (\ta tb. < k ta))
+                    then Tree a (insert k v l) r
+                    else if (a (\ta tb. == k ta))
+                           then Tree (Tuple k v) l r
+                           else Tree a (insert k v l) r)
+
+get k tree =
+  tree Nothing
+       (\a l r. if a (\ta tb. == ta k)
+                  then a (\ta tb. Just tb)
+                  else if (a (\ta tb. < k ta))
+                         then get k l
+                         else get k r)
+
+listAppend xs ys =
+  xs ys
+     (\h t. Cons h (listAppend t ys))
+
+toList tree =
+  tree Nil
+       (\a l r. listAppend (toList r) (Cons a (toList l)))
+
+keyvalListShow ys = keyvalListShow_rec True "[" ys
+
+keyvalListShow_rec first acc xs =
+  let sep = if first then "" else ", " in
+  xs (++ acc "]") (\h t. keyvalListShow_rec False (++ acc (++ sep (showTuple h))) t)
+
+main = let tree = insert "hi"    5 (
+                  insert "hello" 4 (
+                  insert "hi"    3 (
+                  Empty)))
+
+       in ++ (++ (++ "Get 'hello' from tree: " (showMaybe (get "hello" tree))) ", Whole tree is: ") (keyvalListShow (toList tree))
+

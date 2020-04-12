@@ -1,0 +1,8 @@
+data Either l r = Left l
+                | Right r
+
+main =
+  (Right 3) (\l. * 2 l)
+            (\r. + 2 r)
+
+-- 5

@@ -1,0 +1,44 @@
+main =
+
+    (\eq add two four.
+
+        eq (add two two) four "Yes" "No")
+
+    -- eq
+    ((\true false.
+
+        (\y is_zero prev.
+
+            y (\f a b. is_zero a
+                        (is_zero b true false)
+                        (is_zero b false
+                                    (f (prev a) (prev b)))))
+
+        -- y
+        (\f. (\x. f (x x)) (\x. f (x x)))
+
+        -- is_zero
+        (\n. n (\c. false) true)
+
+        -- prev
+        (\n f x. n (\g h. h (g f)) (\u. x) (\u. u)))
+
+        -- true
+        (\t f. t)
+
+        -- false
+        (\t f. f))
+
+    -- add
+    ((\next.
+
+        (\m n f x. m next n f x))
+
+      --next
+      (\n f x. f (n f x)))
+
+    -- two
+    (\f x. f (f x))
+
+    -- four
+    (\f x. f (f (f (f x))))

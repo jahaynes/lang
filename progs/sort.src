@@ -1,0 +1,31 @@
+data List a = Nil
+            | Cons a (List a)
+
+listAppend as bs =
+  as bs (\h t. Cons h (listAppend t bs)) 
+
+listShow ys =
+
+  let listShowRec first acc xs =
+
+      let sep = if first then "" else ", " in
+
+      xs (++ acc "]")
+          (\h t. listShowRec False (++ acc (++ sep (show h))) t) in
+
+  listShowRec True "[" ys
+
+filter p xs =
+  xs Nil
+     (\h t. if p h
+              then Cons h (filter p t)
+              else         filter p t)
+
+sort xs =
+  xs Nil (\h t. let lesser  = filter (\x.    < x h)  t in
+                let greater = filter (\x. ( >= x h)) t in
+                listAppend (sort lesser) (Cons h (sort greater)))
+
+main =
+  let list = Cons 3 (Cons 1 (Cons 2 (Cons 9 (Cons 30 (Cons 8 (Cons 7 (Cons 8 (Cons 0 Nil))))))))
+  in listShow (sort list)

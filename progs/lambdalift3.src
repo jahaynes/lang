@@ -1,0 +1,11 @@
+
+foo = 3
+
+minus a b =
+  let go x = 
+    if (== 0 x)
+      then - (+ x a) b
+      else go (- x 1)
+  in go foo
+
+main = minus 6 4

@@ -1,0 +1,24 @@
+z f =
+  (\x. f (\v. x x v)) (\x. f (\v. x x v))
+
+data List a = Nil
+            | Cons a (List a)
+
+concat_fix f acc xs =
+  xs acc
+     (\x xs. ++ x (f acc xs))
+
+concat xs =
+  z concat_fix "" xs
+
+rev_fix f acc xs =
+  xs acc
+     (\x xs. f (Cons x acc) xs)
+
+rev xs =
+  z rev_fix Nil xs
+
+main = 
+    concat (rev (Cons "Cool" (Cons "Hello" (Cons "World" Nil))))
+
+-- "WorldHelloCool"

@@ -1,0 +1,10 @@
+cons x y = \s. s x y
+head xs  = xs (\x y. x)
+tail xs  = xs (\x y. y)
+
+main =
+  let xs = cons 2 (cons 1 0)
+  in
+  head (tail xs)
+
+-- 1

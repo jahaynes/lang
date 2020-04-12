@@ -1,0 +1,9 @@
+
+
+bigger x = + x 1
+
+meh = + 2 2
+
+bar = let x = 2 in x
+
+main = bigger (+ meh bar)

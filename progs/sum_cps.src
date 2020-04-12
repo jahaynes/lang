@@ -1,0 +1,14 @@
+data List a = Nil
+            | Cons a (List a)
+
+id x = x
+
+sum_cps_rec acc xs k =
+  xs (k acc)
+     (\x xs. sum_cps_rec (+ x acc) xs k)
+
+sum_cps xs k =
+  sum_cps_rec 0 xs k
+
+main =
+  sum_cps (Cons 1 (Cons 2 (Cons 3 Nil))) id

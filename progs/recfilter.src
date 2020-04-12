@@ -1,0 +1,29 @@
+data List a = Nil | Cons a (List a)
+
+filter p xs =
+  xs Nil
+     (\h t. if (p h)
+              then Cons h (filter p t)
+              else         filter p t)
+
+length xs =
+  xs 0
+     (\h t. + 1 (length t))
+
+oneToFour dummy =
+  Cons 1 (Cons 2 (Cons 3 (Cons 4 Nil)))
+
+listShowRec first acc xs =
+  let sep = if first then "" else ", " in
+  xs (++ acc "]")
+     (\h t. listShowRec False ( ++ acc (++ sep (show h))) t)
+
+listShow ys =
+  listShowRec True "[" ys
+
+main =
+  listShow (
+    filter (\x. > x 2) (
+      oneToFour 0
+    )
+  )

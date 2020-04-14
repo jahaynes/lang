@@ -97,9 +97,28 @@ main = do
     C8.putStrLn "\n * Lambda lift resulted in (pretty) *"
     print (PrettyTopLevel sourceMap liftedTle)
     
-    runWithBetaReduction verbose sourceMap liftedTle
+    findUsageGraph liftedTle
 
-    runWithCpsSemantics liftedTle
+    --runWithBetaReduction verbose sourceMap liftedTle
+
+    --runWithCpsSemantics liftedTle
+
+findUsageGraph (TopLevelEnv tle) = do
+
+  let mainExpr = snd . head . filter (\x -> "main" == fst x) $ tle
+  print $ findImmediateDependencies mainExpr
+
+  where
+  findImmediateDependencies = go []
+    where
+    go scoped (ETerm (LitInt _)) = []
+    go scoped (ETerm (Var x))
+      | x `L.elem` scoped = []
+      | otherwise         = [x]
+    go scoped (ELam v b) = go (v:scoped) b
+    go scoped (EApp a b) = go scoped a ++ go scoped b
+    go scoped (EBinPrimOp _ a b) = go scoped a ++ go scoped b
+    go scoped x = error $ show x
 
 runWithCpsSemantics :: TopLevelEnv ByteString -> IO ()
 runWithCpsSemantics topLevelEnv = do

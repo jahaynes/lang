@@ -25,6 +25,8 @@ import           Control.Monad               (forM_, when)
 import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.List             as L
+import           Data.Set                    (Set)
+import qualified Data.Set              as S
 import qualified Data.Map              as M
 import           Data.Monoid                 ((<>))
 import           System.Environment          (getArgs)
@@ -103,22 +105,46 @@ main = do
 
     --runWithCpsSemantics liftedTle
 
+findUsageGraph :: TopLevelEnv ByteString -> IO ()
 findUsageGraph (TopLevelEnv tle) = do
 
   let mainExpr = snd . head . filter (\x -> "main" == fst x) $ tle
   print $ findImmediateDependencies mainExpr
 
   where
-  findImmediateDependencies = go []
+  findImmediateDependencies :: Expr ByteString -> Set ByteString
+  findImmediateDependencies =
+    go mempty
     where
-    go scoped (ETerm (LitInt _)) = []
+
+    go scoped (ETerm (DCons x))
+      | x `S.member` scoped = mempty
+      | otherwise           = S.singleton x
+
+    go scoped (ETerm (LitInt _)) =
+      mempty
+
+    go scoped (ETerm (LitBool _)) =
+      mempty
+
+    go scoped (ETerm (LitString _)) =
+      mempty
+
     go scoped (ETerm (Var x))
-      | x `L.elem` scoped = []
-      | otherwise         = [x]
-    go scoped (ELam v b) = go (v:scoped) b
-    go scoped (EApp a b) = go scoped a ++ go scoped b
-    go scoped (EBinPrimOp _ a b) = go scoped a ++ go scoped b
-    go scoped x = error $ show x
+      | x `S.member` scoped = mempty
+      | otherwise           = S.singleton x
+
+    go scoped (ELam v b) =
+      go (S.insert v scoped) b
+
+    go scoped (EApp a b) =
+      go scoped a <> go scoped b
+
+    go scoped (EBinPrimOp _ a b) =
+      go scoped a <> go scoped b
+
+    go scoped x =
+      error $ show x
 
 runWithCpsSemantics :: TopLevelEnv ByteString -> IO ()
 runWithCpsSemantics topLevelEnv = do

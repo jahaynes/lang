@@ -21,6 +21,7 @@ executable lang
                        DataTypes
                        ExprParser
                        Interpret
+                       Graphs
                        LambdaLift
                        LexState
                        Lexer

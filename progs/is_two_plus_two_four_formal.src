@@ -1,3 +1,5 @@
+-- TODO: will not evaluate under CPS.  Is this expected?  Y combinator?
+
 main =
 
     (\eq add two four.

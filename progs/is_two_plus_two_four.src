@@ -1,4 +1,9 @@
 
+--  * Toplevels evaluated to: *
+-- eq: lang: Could not find VVar "y" in env
+-- CallStack (from HasCallStack):
+--  error, called at src/CpsEval.hs:45:14 in main:CpsEval
+
 zero  = \f x.            x
 one   = \f x.          f x
 two   = \f x.       f (f x)

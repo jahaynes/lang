@@ -5,13 +5,12 @@ outer acc =
 
     let extra = "foo" in
 
-      if (== 0 n)
+      if 0 == n
 
         then acc
 
-        else go (- n 1) in
+        else go (n - 1) in
 
   go 10
-
 
 main = outer "meh"

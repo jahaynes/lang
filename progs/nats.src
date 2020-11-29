@@ -6,7 +6,7 @@ data List a = Nil
 
 sum_fix f a xs =
   xs a
-     (\x xs. f (+ a x) xs)
+     (\x xs. f (a + x) xs)
 
 sum xs =
   z sum_fix 0 xs

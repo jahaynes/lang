@@ -7,6 +7,6 @@ fmap f mx =
 bind f mx =
   mx Nothing f
 
-main = (bind (\x. Just (+ 1 x)) (Just 3))
+main = (bind (\x. Just (1 + x)) (Just 3))
          0
          (\i. i)

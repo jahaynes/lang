@@ -6,7 +6,7 @@ data List a = Nil
 
 find_fix f n ls =
   ls "Nope"
-     (\x xs. if == n x
+     (\x xs. if n == x
                then "Yes"
                else (f n xs))
 

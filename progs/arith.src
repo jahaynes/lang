@@ -3,7 +3,7 @@ one    = \f x.       f x
 two    = \f x.    f (f x)
 three  = \f x. f (f (f x))
 
-toInt  = \n. n (\i -> + 1 i) 0
+toInt  = \n. n (\i -> 1 + i) 0
 isZero = \x. x (\c. "False") "True"
 
 main   = isZero zero

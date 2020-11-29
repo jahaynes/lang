@@ -1,5 +1,5 @@
 v_1 v_2 =
-  let v_3 v_4 = + v_2 v_4
+  let v_3 v_4 = v_2 + v_4
   in v_3 3
 
 main = v_1 2

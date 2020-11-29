@@ -1,9 +1,9 @@
 
 summorial x =
   let summorial_fix a n =
-    if (== 0 n)
+    if 0 == n
       then a
-      else summorial_fix (+ a n) (- n 1)
+      else summorial_fix (a + n) (n - 1)
   in
   summorial_fix 0 x
 

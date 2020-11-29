@@ -4,15 +4,15 @@ data List a = Nil
 
 genList n =
   let genListGo acc a b =
-    if (> a b)
+    if a > b
       then acc
-      else genListGo (Cons a acc) (+ a 1) b in
+      else genListGo (Cons a acc) (a + 1) b in
   genListGo Nil 0 n
 
 sumList xs = 
   let sumListGo acc ys =
         ys acc
-           (\h t. sumListGo (+ h acc) t) in
+           (\h t. sumListGo (h + acc) t) in
   sumListGo 0 xs
 
 main =

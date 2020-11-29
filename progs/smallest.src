@@ -4,7 +4,7 @@ data List a = Nil
 smallest ys =
   let go a xs = 
     xs (Cons a Nil)
-       (\h t. if (< h a) 
+       (\h t. if h < a
                 then go h t
                 else go a t) in
   ys Nil

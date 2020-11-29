@@ -1,8 +1,8 @@
 badfib m = 
-  let go n = if (< n 2)
+  let go n = if (n < 2)
                then n
-               else + (go (- n 1))
-                      (go (- n 2)) in
+               else + (go (n - 1))
+                      (go (n - 2)) in
   go m
 
 main = badfib 6

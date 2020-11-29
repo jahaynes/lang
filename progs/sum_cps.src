@@ -5,7 +5,7 @@ id x = x
 
 sum_cps_rec acc xs k =
   xs (k acc)
-     (\x xs. sum_cps_rec (+ x acc) xs k)
+     (\x xs. sum_cps_rec (x + acc) xs k)
 
 sum_cps xs k =
   sum_cps_rec 0 xs k

@@ -2,7 +2,7 @@ data List a = Nil
             | Cons a (List a)
 
 sum_rec acc xs =
-  xs acc (\x xs. sum_rec (+ x acc) xs)
+  xs acc (\x xs. sum_rec (x + acc) xs)
 
 sum xs =
   sum_rec 0 xs

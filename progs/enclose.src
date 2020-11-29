@@ -1,10 +1,10 @@
 id x = x
 
 times_k a b k =
-    k (* a b)
+    k (a * b)
 
 plus_k a b k =
-    k (+ a b)
+    k (a + b)
 
 sum_of_squares_k x y k =
     times_k x x (\x2. times_k y y (\y2. plus_k x2 y2 k))

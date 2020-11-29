@@ -10,8 +10,8 @@ listShow ys =
 
       let sep = if first then "" else ", " in
 
-      xs (++ acc "]")
-          (\h t. listShowRec False (++ acc (++ sep (show h))) t) in
+      xs (acc ++ "]")
+          (\h t. listShowRec False (acc ++ sep ++ show h) t) in
 
   listShowRec True "[" ys
 
@@ -22,8 +22,8 @@ filter p xs =
               else         filter p t)
 
 sort xs =
-  xs Nil (\h t. let lesser  = filter (\x.    < x h)  t in
-                let greater = filter (\x. ( >= x h)) t in
+  xs Nil (\h t. let lesser  = filter (\x.  x < h) t in
+                let greater = filter (\x. x >= h) t in
                 listAppend (sort lesser) (Cons h (sort greater)))
 
 main =

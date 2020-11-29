@@ -1,9 +1,9 @@
 
 
-bigger x = + x 1
+bigger x = x + 1
 
-meh = + 2 2
+meh = 2 + 2
 
 bar = let x = 2 in x
 
-main = bigger (+ meh bar)
+main = bigger (meh + bar)

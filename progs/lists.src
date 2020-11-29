@@ -1,15 +1,20 @@
+-- *Toplevels evaluated to: *
+-- nats: lang: Could not find VVar "v1" in env
+-- CallStack (from HasCallStack):
+--  error, called at src/CpsEval.hs:45:14 in main:CpsEva
+
 data List = Nil | Cons a List
 
 nats =
   let go n =
-    Cons n (go (+ 1 n)) in
+    Cons n (go (1 + n)) in
   go 0
 
 listTake m ys =
   let go n xs =
-    if (== 0 n)
+    if n == 0
       then Nil
-      else xs Nil (\h t. Cons h (go (- n 1) t)) in
+      else xs Nil (\h t. Cons h (go (n - 1) t)) in
   go m ys
 
 listMap f ys =
@@ -35,14 +40,14 @@ listBind mf ys =
 listShow ys =
   let go first acc xs =
     let sep = if first then "" else ", " in
-    xs (++ acc "]") (\h t. go False (++ acc (++ sep (show h))) t) in
+    xs (acc ++ "]") (\h t. go False (acc ++ sep ++ show h) t) in
   go True "[" ys
 
 duplicate x = Cons x (Cons x Nil)
 
 main =
   listShow (
-    listMap (\x. * 3 x) (
+    listMap (\x. 3 * x) (
       listBind duplicate (
         listTake 10 nats
       )

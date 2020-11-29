@@ -6,7 +6,7 @@ data List a = Nil
 
 concat_fix f acc xs =
   xs acc
-     (\x xs. ++ x (f acc xs))
+     (\x xs. x ++ f acc xs)
 
 concat xs =
   z concat_fix "" xs

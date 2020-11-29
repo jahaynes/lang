@@ -1,9 +1,9 @@
 z = \f. (\x. f (\v. x x v)) (\x. f (\v. x x v))
 
 how_big_fix h a xs =
-  if == xs 0
+  if xs == 0
     then a
-    else h (+ 1 a) (- xs 1)
+    else h (1 + a) (xs - 1)
 
 how_big x =
   z how_big_fix 0 x

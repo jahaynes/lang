@@ -1,14 +1,14 @@
 data List = Nil
           | Cons a List
 
-a x = >= 1 2
-b x = >  3 4
-c x = <= 5 6
-d x = <  7 8
+a x = 1 >= 2
+b x = 3 >  4
+c x = 5 <= 6
+d x = 7 <  8
 
 showList xs = go "" xs
 
-go acc xs = xs acc (\h t. go (++ (++ acc (show h)) " ") t)
+go acc xs = xs acc (\h t. go (acc ++ show h ++ " ") t)
 
 main = let ls = Cons (a 0) (Cons (b 0) (Cons (c 0) (Cons (d 0) Nil))) in
        showList ls

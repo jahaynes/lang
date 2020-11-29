@@ -1,5 +1,5 @@
 main = 
-  let f = \x. + 1 x in
+  let f = \x. 1 + x in
   let x = 2         in
   f x
 

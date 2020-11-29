@@ -1,9 +1,11 @@
+-- this shows that z can work in both beta-reduction and cps
+
 z = \f. (\x. f (\v. x x v)) (\x. f (\v. x x v)) 
 
 decrements_to_zero_fix h xs =
-  if == xs 0
+  if xs == 0
     then "decrements to zero"
-    else (h (- xs 1))
+    else h (xs - 1)
 
 decrements_to_zero n =
   z decrements_to_zero_fix n

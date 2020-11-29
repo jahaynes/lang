@@ -14,10 +14,10 @@ foldr k d xs = z foldrfix k d xs
 
 -- Take
 takefix f n acc xs =
-  if == 0 n
+  if n == 0
     then acc
     else xs Nil
-            (\h t. f (- n 1) (Cons h acc) t)
+            (\h t. f (n - 1) (Cons h acc) t)
 
 take x = z takefix x Nil
 
@@ -27,5 +27,5 @@ main =
 
   in
 
-  foldr (\a b. + a b) 0 (take 4 twos)
+  foldr (\a b. a + b) 0 (take 4 twos)
        

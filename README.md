@@ -13,15 +13,15 @@ data List a = Nil
 
 genList n =
   let genListGo acc a b =
-    if (> a b)
+    if a > b
       then acc
-      else genListGo (Cons a acc) (+ a 1) b in
+      else genListGo (Cons a acc) (a + 1) b in
   genListGo Nil 0 n
 
 sumList xs = 
   let sumListGo acc ys =
         ys acc
-           (\h t. sumListGo (+ h acc) t) in
+           (\h t. sumListGo (h + acc) t) in
   sumListGo 0 xs
 
 main =
@@ -29,7 +29,7 @@ main =
   in
   sumList ls
  * Tokens (Positional information elided) *
-[TData,UpperIdent "List",LowerIdent "a",SingleEq,UpperIdent "Nil",TPipe,UpperIdent "Cons",LowerIdent "a",UpperIdent "List",LowerIdent "genList",LowerIdent "n",SingleEq,TLet,LowerIdent "genListGo",LowerIdent "acc",LowerIdent "a",LowerIdent "b",SingleEq,If,LParen,TGreaterThan,LowerIdent "a",LowerIdent "b",RParen,Then,LowerIdent "acc",Else,LowerIdent "genListGo",LParen,UpperIdent "Cons",LowerIdent "a",LowerIdent "acc",RParen,LParen,Plus,LowerIdent "a",TokInt 1,RParen,LowerIdent "b",In,LowerIdent "genListGo",UpperIdent "Nil",TokInt 0,LowerIdent "n",LowerIdent "sumList",LowerIdent "xs",SingleEq,TLet,LowerIdent "sumListGo",LowerIdent "acc",LowerIdent "ys",SingleEq,LowerIdent "ys",LowerIdent "acc",LParen,Lambda,LowerIdent "h",LowerIdent "t",Dot,LowerIdent "sumListGo",LParen,Plus,LowerIdent "h",LowerIdent "acc",RParen,LowerIdent "t",RParen,In,LowerIdent "sumListGo",TokInt 0,LowerIdent "xs",LowerIdent "main",SingleEq,TLet,LowerIdent "ls",SingleEq,LowerIdent "genList",TokInt 10,In,LowerIdent "sumList",LowerIdent "ls"]
+[TData,UpperIdent "List",LowerIdent "a",SingleEq,UpperIdent "Nil",TPipe,UpperIdent "Cons",LowerIdent "a",UpperIdent "List",LowerIdent "genList",LowerIdent "n",SingleEq,TLet,LowerIdent "genListGo",LowerIdent "acc",LowerIdent "a",LowerIdent "b",SingleEq,If,LowerIdent "a",TGreaterThan,LowerIdent "b",Then,LowerIdent "acc",Else,LowerIdent "genListGo",LParen,UpperIdent "Cons",LowerIdent "a",LowerIdent "acc",RParen,LParen,LowerIdent "a",Plus,TokInt 1,RParen,LowerIdent "b",In,LowerIdent "genListGo",UpperIdent "Nil",TokInt 0,LowerIdent "n",LowerIdent "sumList",LowerIdent "xs",SingleEq,TLet,LowerIdent "sumListGo",LowerIdent "acc",LowerIdent "ys",SingleEq,LowerIdent "ys",LowerIdent "acc",LParen,Lambda,LowerIdent "h",LowerIdent "t",Dot,LowerIdent "sumListGo",LParen,LowerIdent "h",Plus,LowerIdent "acc",RParen,LowerIdent "t",RParen,In,LowerIdent "sumListGo",TokInt 0,LowerIdent "xs",LowerIdent "main",SingleEq,TLet,LowerIdent "ls",SingleEq,LowerIdent "genList",TokInt 10,In,LowerIdent "sumList",LowerIdent "ls"]
 
  * Top-level definitions *
 DataDef (TC "List" ["a"]) [DataCons "Nil" [],DataCons "Cons" ["a",TC "List" []]]

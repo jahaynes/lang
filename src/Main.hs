@@ -108,7 +108,7 @@ runWithCpsSemantics topLevelEnv = do
     let (vars, nonMainExprs, mainExpr, vals) = cpsTransformTopLevel topLevelEnv
 
     C8.putStrLn "\n * Transformed to: *"
-    print ("main", mainExpr)
+    print ("main" :: String, mainExpr)
     mapM_ print nonMainExprs
 
     let (vars', vals') = unzip (map cpsEvaluateNonMainExpression nonMainExprs)
@@ -120,7 +120,7 @@ runWithCpsSemantics topLevelEnv = do
       print val
 
     C8.putStrLn "\n * Will try to Cps Eval: *"
-    print $ cpsEval vars'' mainExpr vals'' undefined
+    print $ cpsEval vars'' mainExpr vals''
 
     {- TODO: Toplevels which are not constants,
        functions or main can not yet refer to one another.
@@ -128,9 +128,10 @@ runWithCpsSemantics topLevelEnv = do
        Will need to build a call graph to resolve this.
      -}
     where
-    cpsEvaluateNonMainExpression :: (ByteString, Cexp ByteString) -> (Val ByteString, DValue ByteString)
+    cpsEvaluateNonMainExpression :: (ByteString, Cexp ByteString)
+                                 -> (Val ByteString, DValue ByteString)
     cpsEvaluateNonMainExpression (name, expr) =
-      let Answer val = cpsEval [] expr [] undefined
+      let Answer val = cpsEval [] expr []
       in (VVar name, val)
 
 runWithBetaReduction :: Bool -> SourceMap ByteString -> TopLevelEnv ByteString -> IO ()

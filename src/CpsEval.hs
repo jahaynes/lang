@@ -1,13 +1,13 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
-module CpsEval where
+module CpsEval ( Answer (..)
+               , DValue (..)
+               , cpsEval
+               ) where
 
 import CpsTypes
 
 import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Char8 as C8
 import Data.Word                             (Word64)
-
 
 type S = ByteString
 

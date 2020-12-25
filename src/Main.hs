@@ -5,6 +5,7 @@ module Main where
 import Alphabetise
 import Core
 import CpsEval
+import CpsPretty
 import CpsTransform
 import DataTypes
 import Interpret
@@ -12,6 +13,7 @@ import LambdaLift
 import Lexer
 import LexState
 import Parser
+import Pretty
 import PrettyExpr
 import PrettyTopLevel
 import SourceMap
@@ -99,10 +101,10 @@ main = do
     
     runWithBetaReduction verbose sourceMap liftedTle
 
-    runWithCpsSemantics liftedTle
+    runWithCpsSemantics sourceMap liftedTle
 
-runWithCpsSemantics :: TopLevelEnv ByteString -> IO ()
-runWithCpsSemantics topLevelEnv = do
+runWithCpsSemantics :: SourceMap ByteString -> TopLevelEnv ByteString -> IO ()
+runWithCpsSemantics sourceMap topLevelEnv = do
 
     C8.putStrLn "\n * Will try to CPS *"
     let (vars, nonMainExprs, mainExpr, vals) = cpsTransformTopLevel topLevelEnv
@@ -110,6 +112,10 @@ runWithCpsSemantics topLevelEnv = do
     C8.putStrLn "\n * Transformed to: *"
     print ("main", mainExpr)
     mapM_ print nonMainExprs
+
+    C8.putStrLn "\n * CPS Pretty: *"
+    let x = CpsPretty sourceMap topLevelEnv
+    print $ pretty 0 x
 
     let (vars', vals') = unzip (map cpsEvaluateNonMainExpression nonMainExprs)
         vars''         = vars ++ vars'

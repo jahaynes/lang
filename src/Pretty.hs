@@ -4,7 +4,7 @@ class Pretty a where
     pretty :: Int -> a -> (IsCompound, String)
 
 data IsCompound = IsSimple
-                | IsCompound
+                | IsCompound deriving Show
 
 simple :: a -> (IsCompound, a)
 simple x = (IsSimple, x)

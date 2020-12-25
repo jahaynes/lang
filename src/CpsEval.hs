@@ -31,7 +31,9 @@ instance Show s => Show (DValue s) where
 type Env s = Val s -> DValue s
 
 -- Vee turns a Cps Value into a Denotable Value
-vee :: Env S -> Val S -> DValue S
+-- Constants are left as is
+-- Variables are looked up from the environment
+vee :: Env s -> Val s -> DValue s
 vee   _   (VInt i)    = DInt i
 vee   _   (VBool b)   = DBool b
 vee   _   (VString s) = DString s

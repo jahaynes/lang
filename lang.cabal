@@ -16,6 +16,7 @@ executable lang
                        Combinators
                        Core
                        CpsEval
+                       CpsPretty
                        CpsTransform
                        CpsTypes
                        DataTypes

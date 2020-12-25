@@ -4,8 +4,12 @@ module CpsEval where
 
 import CpsTypes
 
-import Data.Word (Word64)
+import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Char8 as C8
+import Data.Word                             (Word64)
+
+
+type S = ByteString
 
 data Loc = Loc Word64 deriving Eq
 
@@ -27,49 +31,44 @@ instance Show s => Show (DValue s) where
 type Env s = Val s -> DValue s
 
 -- Vee turns a Cps Value into a Denotable Value
-vee :: Env s -> Val s -> DValue s
+vee :: Env S -> Val S -> DValue S
 vee   _   (VInt i)    = DInt i
 vee   _   (VBool b)   = DBool b
 vee   _   (VString s) = DString s
 vee env v@(VVar _)    = env v
 
-bind :: Eq s => Env s -> Val s -> DValue s -> Env s
+bind :: Env S -> Val S -> DValue S -> Env S
 bind env v@(VVar _) d = \w ->
     if v == w then d else env w
 
-bindn :: Eq s => Env s -> [Val s] -> [DValue s] -> Env s
+bindn :: Env S -> [Val S] -> [DValue S] -> Env S
 bindn env     []     [] = env
 bindn env (v:vs) (d:ds) = bindn (bind env v d) vs ds
 
-env0 :: Show s => Env s
+env0 :: Env ByteString
 env0 = \k -> error $ unwords [ "Could not find"
                              , show k
                              , "in env"
                              ]
-{-
+
 -- Yields answer by evaluating cexp in env where vars are bound to vals
-cpsEval :: (Eq s, Semigroup s, Show s)
-        => [Val s]      -- list of CPS vars
-        -> Cexp s       -- a continuation expr
-        -> [DValue s]   -- list of denotable vals
-        -> Store s      -- a store
-        -> Answer s
--}
+cpsEval :: [Val S]      -- list of CPS vars
+        -> Cexp S       -- a continuation expr
+        -> [DValue S]   -- list of denotable vals
+        -> Store S      -- a store
+        -> Answer S
 cpsEval vs e ds = ee e (bindn env0 vs ds)
 
-{-
 --p34. Ee takes the denotation of a CPS expr
-ee :: (Eq s, Semigroup s, Show s)
-   => Cexp s
-   -> Env s
-   -> Store s
-   -> Answer s
--}
-ee (CApp f vl) env =
+ee :: Cexp S
+   -> Env S
+   -> Store S
+   -> Answer S
+ee (CApp f vl) env store =
     let Func g = vee env f
-    in g (map (vee env) vl)
+    in g (map (vee env) vl) store
 
-ee (CFix fl e) env = ee e (g env)
+ee (CFix fl e) env store = ee e (g env) store
 
     where
     g r = do
@@ -79,18 +78,19 @@ ee (CFix fl e) env = ee e (g env)
 
     h rl (_, vl, b) = Func $ \al -> ee b (bindn (g rl) vl al)
 
-ee (CPrimOp p vl wl el) env =
+ee (CPrimOp p vl wl el) env store =
     evalprim p
              (map (vee env) vl)
              (map (\e -> \al -> ee e (bindn env wl al)) el)
+             store
 
-ee (CSwitch v t f) env =
+ee (CSwitch v t f) env store =
     case vee env v of
-        DBool True  -> ee t env
-        DBool False -> ee f env
+        DBool True  -> ee t env store
+        DBool False -> ee f env store
         other -> error "Unexpected switch on nonbool"
 
-ee (CHalt val) env = \s ->
+ee (CHalt val) env store =
     case vee env val of
         a@(DInt _)    -> Answer a
         a@(DBool _)   -> Answer a
@@ -98,8 +98,11 @@ ee (CHalt val) env = \s ->
         Func _ ->
             error " I dont think this is part of the semantics "
 
---evalprim :: (Eq s, Show s, Semigroup s) => COp -> [DValue s] -> [[DValue s] -> Store s -> Answer s] -> Store s -> Answer s
-
+evalprim :: COp                                 -- Operator
+         -> [DValue S]                          -- Parameters
+         -> [[DValue S] -> Store S -> Answer S] -- Continuations
+         -> Store S                             -- Store
+         -> Answer S                            -- Answer
 evalprim    AddI       [DInt i, DInt j] [c] = overflow (\() -> i + j) c
 evalprim    SubI       [DInt i, DInt j] [c] = overflow (\() -> i - j) c
 evalprim    MulI       [DInt i, DInt j] [c] = overflow (\() -> i * j) c
@@ -108,12 +111,9 @@ evalprim     LtEqI     [     a,      b] [c] = c [lteqi a b]
 evalprim     LtI       [     a,      b] [c] = c [lti   a b]
 evalprim     GtEqI     [     a,      b] [c] = c [gteqi a b]
 evalprim     GtI       [     a,      b] [c] = c [gti   a b]
-
 evalprim     EqI       [     a,      b] [c] = c [equ   a b]
 
 evalprim ConcatS [DString a, DString b] [c] = c [DString $ a <> b]
-
-
 
 evalprim    EShow    [DInt i]  [c] = c [DString . C8.pack . show $ i]
 evalprim    EShow   [DBool b]  [c] = c [DString . C8.pack . show $ b]
@@ -122,28 +122,28 @@ evalprim    Err [DString e] [c] = error $ "ERROR: " ++ show e
 
 evalprim a b _ = error $ show (a,b)
 
-lteqi :: (Eq s, Ord s, Show s) => DValue s -> DValue s -> DValue s
+lteqi :: DValue S -> DValue S -> DValue S
 lteqi    (DInt a)    (DInt b) = DBool (a <= b)
 lteqi (DString a) (DString b) = DBool (a <= b)
 
-lti :: (Eq s, Ord s, Show s) => DValue s -> DValue s -> DValue s
+lti :: DValue S -> DValue S -> DValue S
 lti    (DInt a)    (DInt b) = DBool (a < b)
 lti (DString a) (DString b) = DBool (a < b)
 
-gteqi :: (Eq s, Ord s, Show s) => DValue s -> DValue s -> DValue s
+gteqi :: DValue S -> DValue S -> DValue S
 gteqi    (DInt a)    (DInt b) = DBool (a >= b)
 gteqi (DString a) (DString b) = DBool (a >= b)
 
-gti :: (Eq s, Ord s, Show s) => DValue s -> DValue s -> DValue s
+gti :: DValue S -> DValue S -> DValue S
 gti    (DInt a)    (DInt b) = DBool (a > b)
 gti (DString a) (DString b) = DBool (a > b)
 
-equ :: (Eq s, Show s) => DValue s -> DValue s -> DValue s
+equ :: DValue S -> DValue S -> DValue S
 equ    (DInt a)    (DInt b) = DBool (a == b)
 equ   (DBool a)   (DBool b) = DBool (a == b)
 equ (DString a) (DString b) = DBool (a == b)
 
-overflow :: (() -> Integer) -> ([DValue s] -> t) -> t
+overflow :: (() -> Integer) -> ([DValue S] -> t) -> t
 overflow n c = 
     let i = n ()
     in c [DInt i]

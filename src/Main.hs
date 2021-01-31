@@ -3,6 +3,7 @@
 module Main where
 
 import Alphabetise
+import AsmWriter
 import Core
 import CpsEval
 import CpsTransform
@@ -121,6 +122,8 @@ runWithCpsSemantics topLevelEnv = do
 
     C8.putStrLn "\n * Will try to Cps Eval: *"
     print $ cpsEval vars'' mainExpr vals''
+
+    writeAsm mainExpr
 
     {- TODO: Toplevels which are not constants,
        functions or main can not yet refer to one another.

@@ -127,14 +127,14 @@ go (L.EUnPrimOp i e) c = do
     w  <- genvar
     cw <- c w
     go e $ \e' ->
-        pure $ CPrimOp (fromUnOp i) [e'] [w] [cw]
+        pure $ CPrimOp (fromUnOp i) [e'] w cw
 
 go (L.EBinPrimOp op a b) c = do -- Guess
     w  <- genvar
     cw <- c w
     go a $ \a' ->
         go b $ \b' ->
-            pure $ CPrimOp (fromBinOp op) [a', b'] [w] [cw]
+            pure $ CPrimOp (fromBinOp op) [a', b'] w cw
 
 go (L.IfThenElse p t f) c =
     go p $ \p' -> do

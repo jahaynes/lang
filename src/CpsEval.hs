@@ -64,7 +64,7 @@ ee (CApp funName funArgs) env =
         -- Resolve function name to its value
     let Func f = vee env funName
 
-        -- Lookup each variable name to its value
+        -- Follow each variable name to its value
         args = map (vee env) funArgs
 
         -- Apply function to arguments
@@ -85,15 +85,23 @@ ee (CFix fl e) env = ee e (g env)
       -> DValue S
     h env'' (_, vals, b) = Func $ \args -> ee b (bindn (g env'') vals args)
 
-ee (CPrimOp op argNames wl el) env =
+ee (CPrimOp op args argDests ks) env =
 
-    let argValues = map (vee env) argNames
+    let argValues = map (vee env) args
 
-        continuations = map (\e -> \al -> ee e (bindn env wl al)) el
+        continuations = evaluateContinuation ks
 
     in evalprim op
                 argValues
                 continuations
+
+    where
+    evaluateContinuation :: Cexp S -> [DValue S] -> Answer S
+    evaluateContinuation k vs =
+
+        let env' = bindn env [argDests] vs
+
+        in ee k env'
 
 -- Lookup a boolean b, then evaluate the true- or false-continuation
 ee (CSwitch b t f) env =
@@ -112,29 +120,29 @@ ee (CHalt val) env =
 
 evalprim :: COp                      -- Operator
          -> [DValue S]               -- Parameters
-         -> [[DValue S] -> Answer S] -- Continuations
+         -> ([DValue S] -> Answer S) -- Continuations
          -> Answer S                 -- Answer
 
     -- Arithmetic
-evalprim AddI [DInt i, DInt j] [c] = overflow (\() -> i + j) c
-evalprim SubI [DInt i, DInt j] [c] = overflow (\() -> i - j) c
-evalprim MulI [DInt i, DInt j] [c] = overflow (\() -> i * j) c
+evalprim AddI [DInt i, DInt j] c = overflow (\() -> i + j) c
+evalprim SubI [DInt i, DInt j] c = overflow (\() -> i - j) c
+evalprim MulI [DInt i, DInt j] c = overflow (\() -> i * j) c
 
     -- Comparisons
-evalprim LtEqI [a, b] [c] = c [lteqi a b]
-evalprim LtI   [a, b] [c] = c [lti   a b]
-evalprim GtEqI [a, b] [c] = c [gteqi a b]
-evalprim GtI   [a, b] [c] = c [gti   a b]
-evalprim EqI   [a, b] [c] = c [equ   a b]
+evalprim LtEqI [a, b] c = c [lteqi a b]
+evalprim LtI   [a, b] c = c [lti   a b]
+evalprim GtEqI [a, b] c = c [gteqi a b]
+evalprim GtI   [a, b] c = c [gti   a b]
+evalprim EqI   [a, b] c = c [equ   a b]
 
     -- String Concatenation
-evalprim ConcatS [DString a, DString b] [c] = c [DString $ a <> b]
+evalprim ConcatS [DString a, DString b] c = c [DString $ a <> b]
 
     -- Error & ToString
-evalprim EShow    [DInt i] [c] = c [DString . C8.pack . show $ i]
-evalprim EShow   [DBool b] [c] = c [DString . C8.pack . show $ b]
-evalprim EShow [DString s] [c] = c [DString . C8.pack . show $ s]
-evalprim Err   [DString e] [_] = error $ "ERROR: " ++ show e
+evalprim EShow    [DInt i] c = c [DString . C8.pack . show $ i]
+evalprim EShow   [DBool b] c = c [DString . C8.pack . show $ b]
+evalprim EShow [DString s] c = c [DString . C8.pack . show $ s]
+evalprim Err   [DString e] _ = error $ "ERROR: " ++ show e
 
 evalprim a b _ = error $ show (a,b)
 

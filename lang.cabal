@@ -13,6 +13,7 @@ executable lang
   main-is:             Main.hs
 
   other-modules:       Alphabetise
+                       AsmWriter
                        Combinators
                        Core
                        CpsEval

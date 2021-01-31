@@ -20,7 +20,7 @@ data Cexp s = CApp (Val s) [Val s]
 
             | CSwitch (Val s) (Cexp s) (Cexp s)
 
-            | CPrimOp COp [Val s] [Val s] [Cexp s]
+            | CPrimOp COp [Val s] (Val s) (Cexp s)
 
             | CHalt (Val s)            -- Guess
               deriving Show

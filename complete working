@@ -1,0 +1,154 @@
+
+-------------------------------------------------------------------------------
+CPS AST
+-------------------------------------------------------------------------------
+CFix [(VVar "countTo",[VVar "v1",VVar "var0"],CPrimOp EqI [VVar "v1",VInt 30] (VVar "var1") (CSwitch (VVar "var1") (CApp (VVar "var0") [VInt 42]) (CFix [(VVar "var2",[VVar "var4"],CApp (VVar "var0") [VVar "var4"])] (CPrimOp AddI [VVar "v1",VInt 1] (VVar "var3") (CApp (VVar "countTo") [VVar "var3",VVar "var2"])))))] (CFix [(VVar "var5",[VVar "var6"],CHalt (VVar "var6"))] (CApp (VVar "countTo") [VInt 30,VVar "var5"]))
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+CPS Formatted
+-------------------------------------------------------------------------------
+CFix [ ( VVar "countTo"
+       , [VVar "v1",VVar "var0"]
+       , CPrimOp EqI 
+                 [VVar "v1",VInt 30]
+                 (VVar "var1")
+                 (CSwitch (VVar "var1")
+                          (CApp (VVar "var0") [VInt 42])
+                          (CFix [ ( VVar "var2"
+                                  , [VVar "var4"]
+                                  , CApp (VVar "var0") [VVar "var4"]
+                                  )
+                                ] (CPrimOp AddI
+                                           [VVar "v1",VInt 1]
+                                           (VVar "var3")
+                                           (CApp (VVar "countTo") [VVar "var3",VVar "var2"])
+                                  )
+                          )
+                 )
+       )
+     ] ( CFix [ ( VVar "var5"
+                , [VVar "var6"]
+                , CHalt (VVar "var6")
+                )
+              ] (CApp (VVar "countTo") [VInt 30,VVar "var5"])
+       )
+-------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------
+CPS Formatted
+-------------------------------------------------------------------------------
+CFix [ ( countTo
+       , [r5,r6]
+       , CPrimOp EqI 
+                 [r5,30]
+                 r7
+                 (CSwitch r7
+                          (CApp r6 [42])
+                          (CFix [ ( fun2
+                                  , [r9]
+                                  , CApp r6 [r9]
+                                  )
+                                ] (CPrimOp AddI
+                                           [r5,1]
+                                           r8
+                                           (CApp countTo [r8,fun2])
+                                  )
+                          )
+                 )
+       )
+     ] ( CFix [ ( fun5
+                , [r4]
+                , CHalt r4
+                )
+              ] (CApp countTo [30,fun5])
+       )
+-------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------
+CPS Formatted
+-------------------------------------------------------------------------------
+countTo(r5, r6) {
+
+    r7 <- r5 == 30
+
+    if r7 {
+        r6 (42);
+    } else {
+
+        fun2(r9) {
+            r6 (r9);            // Problem <- this r6 here is badly scoped?
+        }
+
+        r8 <- r5 + 1
+        countTo (r8, fun2);
+    }                
+}
+
+main() {
+
+    fun5(r4) {
+        halt (r4);
+    }
+
+    countTo (30, fun5);
+}
+
+-------------------------------------------------------------------------------
+
+TODO:
+    Try manually CPSng and lambdalifting/closureconverting the original source
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+Pseudo-ASM      -- pushes have flipped order
+-------------------------------------------------------------------------------
+
+main:
+    push {var5}
+    push {#30}
+    call countTo
+
+var5:
+    var6 <- pop
+    halt var6
+
+countTo:
+    v1   <- pop
+    var0 <- pop
+
+    @ instructions for primop EqI:
+    mov var1, #0
+    cmp v1, #30
+    moveq var1, #1
+
+    @ instructions for switch:
+    cmp var1, #1
+    beq iftrue_0
+    b iffalse_0
+
+iftrue_0:
+    push #42
+    call var0
+
+iffalse_0:
+    @ instructions for primop AddI:
+    add var3, v1, #1
+    push var2
+    push var3
+    call countTo
+
+var2:
+    var4 <- pop
+    push var4
+    call var0

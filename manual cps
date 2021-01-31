@@ -1,0 +1,81 @@
+----------------------------------
+Manual CPS
+----------------------------------
+
+countTo n k =
+  if n == 30
+    then k 42
+    else countTo (n + 1) k
+
+main = countTo 28 Halt
+
+----------------------------------
+Pseudo ASM
+----------------------------------
+countTo =
+    n <- pop
+    k <- pop
+
+    cmp n 30
+    beq iftrue
+    b iffalse
+
+iftrue =
+    push 42
+    bx k
+
+iffalse =
+    m <- n + 1
+    push k
+    push m
+    b countTo
+
+main =
+    push halt
+    push 28
+    b countTo
+
+halt =
+    i <- pop
+    return i;
+
+----------------------------------
+Registers
+----------------------------------
+n - r4
+k - r5
+m - r6
+i - r7
+
+----------------------------------
+Better ASM
+----------------------------------
+countTo:
+    pop {r4}
+    pop {r5}
+
+    cmp r4 #30
+    beq iftrue
+    b iffalse
+
+iftrue:
+    ldr r0, #42
+    push {r0}
+    bx r5
+
+iffalse:
+    add r6, r4, #1
+    push {r6}
+    push {r5}
+    b countTo
+
+main:
+    ldr r0, =halt
+    push {r0}
+    mov r0, #28
+    push {r0}
+    b countTo
+
+halt:
+    pop {r7}
+    

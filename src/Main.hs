@@ -101,6 +101,24 @@ main = do
 
     runWithCpsSemantics liftedTle
 
+{- Actual order
+
+    Desugar Datatypes
+    Lambda lift
+    (Type check)
+    Cps
+
+-}
+
+{- Better order
+
+  Type check
+  Desugar Datatypes
+  Cps
+  Lambda lift
+
+-}
+
 runWithCpsSemantics :: TopLevelEnv ByteString -> IO ()
 runWithCpsSemantics topLevelEnv = do
 

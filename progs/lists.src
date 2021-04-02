@@ -1,14 +1,11 @@
--- *Toplevels evaluated to: *
--- nats: lang: Could not find VVar "v1" in env
--- CallStack (from HasCallStack):
---  error, called at src/CpsEval.hs:45:14 in main:CpsEva
-
 data List = Nil | Cons a List
 
-nats =
-  let go n =
-    Cons n (go (1 + n)) in
-  go 0
+nats n =
+  let goNats m =
+    if n == m
+      then Nil
+      else Cons m (goNats (1 + m)) in
+  goNats 0
 
 listTake m ys =
   let go n xs =
@@ -49,7 +46,7 @@ main =
   listShow (
     listMap (\x. 3 * x) (
       listBind duplicate (
-        listTake 10 nats
+        listTake 10 (nats 20)
       )
     )
   )

@@ -37,13 +37,15 @@ vee   _   (VBool b)   = DBool b
 vee   _   (VString s) = DString s
 vee env v@(VVar _)    = env v
 
-bind :: Env S -> Val S -> DValue S -> Env S
-bind env v@(VVar _) d = \w ->
-    if v == w then d else env w
-
 bindn :: Env S -> [Val S] -> [DValue S] -> Env S
 bindn env     []     [] = env
 bindn env (v:vs) (d:ds) = bindn (bind env v d) vs ds
+
+    where
+    bind :: Env S -> Val S -> DValue S -> Env S
+    bind env v@(VVar _) d w
+        | v == w    = d
+        | otherwise = env w
 
 env0 :: Env ByteString
 env0 = \k -> error $ unwords [ "Could not find"
@@ -52,10 +54,10 @@ env0 = \k -> error $ unwords [ "Could not find"
                              ]
 
 -- Yields answer by evaluating cexp in env where vars are bound to vals
-cpsEval :: [Val S]      -- list of CPS vars
-        -> Cexp S       -- a continuation expr
-        -> [DValue S]   -- list of denotable vals
-        -> Store S      -- a store
+cpsEval :: [Val S]    -- list of CPS vars
+        -> Cexp S     -- a continuation expr
+        -> [DValue S] -- list of denotable vals
+        -> Store S    -- a store
         -> Answer S
 cpsEval vs e ds = ee e (bindn env0 vs ds)
 
@@ -64,61 +66,92 @@ ee :: Cexp S
    -> Env S
    -> Store S
    -> Answer S
-ee (CApp f vl) env store =
-    let Func g = vee env f
-    in g (map (vee env) vl) store
+ee (CApp funName funArgs) env store =
+
+        -- Resolve function name to its value
+    let Func f = vee env funName
+
+        -- Follow each variable name to its value
+        args = map (vee env) funArgs
+
+        -- Apply function to arguments
+    in f args store
 
 ee (CFix fl e) env store = ee e (g env) store
 
     where
-    g r = do
+    g :: Env S
+      -> Env S
+    g env' = do
         let funNames = map (\(n,_,_) -> n) fl
-            funVals  = map (h r) fl
-        bindn r funNames funVals
+            funVals  = map (h env') fl
+        bindn env' funNames funVals
 
-    h rl (_, vl, b) = Func $ \al -> ee b (bindn (g rl) vl al)
+    h :: Env S
+      -> (Val S, [Val S], Cexp S)
+      -> DValue S
+    h env'' (_, vals, b) = Func $ \args -> ee b (bindn (g env'') vals args)
 
-ee (CPrimOp p vl wl el) env store =
-    evalprim p
-             (map (vee env) vl)
-             (map (\e -> \al -> ee e (bindn env wl al)) el)
-             store
+ee (CPrimOp op args argDests ks) env store =
 
-ee (CSwitch v t f) env store =
-    case vee env v of
+    let argValues = map (vee env) args
+
+        continuations = map evaluateContinuation ks
+
+    in evalprim op
+                argValues
+                continuations
+		store
+
+    where
+    evaluateContinuation :: Cexp S -> [DValue S] -> Store S -> Answer S
+    evaluateContinuation k vs store =
+
+        let env' = bindn env argDests vs
+
+        in ee k env' store
+
+-- Lookup a boolean b, then evaluate the true- or false-continuation
+ee (CSwitch b t f) env store =
+    case vee env b of
         DBool True  -> ee t env store
         DBool False -> ee f env store
-        other -> error "Unexpected switch on nonbool"
+        other       -> error "Unexpected switch on nonbool"
 
+-- Lookup the return name and return its value
 ee (CHalt val) env store =
     case vee env val of
         a@(DInt _)    -> Answer a
         a@(DBool _)   -> Answer a
         a@(DString _) -> Answer a
-        Func _ ->
-            error " I dont think this is part of the semantics "
+        Func _        -> error "Tried to return a function at Halt"
 
 evalprim :: COp                                 -- Operator
          -> [DValue S]                          -- Parameters
          -> [[DValue S] -> Store S -> Answer S] -- Continuations
          -> Store S                             -- Store
          -> Answer S                            -- Answer
-evalprim    AddI       [DInt i, DInt j] [c] = overflow (\() -> i + j) c
-evalprim    SubI       [DInt i, DInt j] [c] = overflow (\() -> i - j) c
-evalprim    MulI       [DInt i, DInt j] [c] = overflow (\() -> i * j) c
 
-evalprim     LtEqI     [     a,      b] [c] = c [lteqi a b]
-evalprim     LtI       [     a,      b] [c] = c [lti   a b]
-evalprim     GtEqI     [     a,      b] [c] = c [gteqi a b]
-evalprim     GtI       [     a,      b] [c] = c [gti   a b]
-evalprim     EqI       [     a,      b] [c] = c [equ   a b]
+    --Arithmetic
+evalprim AddI [DInt i, DInt j] [c] = overflow (\() -> i + j) c
+evalprim SubI [DInt i, DInt j] [c] = overflow (\() -> i - j) c
+evalprim MulI [DInt i, DInt j] [c] = overflow (\() -> i * j) c
 
+    -- Comparisons
+evalprim LtEqI [a, b] [c] = c [lteqi a b]
+evalprim LtI   [a, b] [c] = c [lti   a b]
+evalprim GtEqI [a, b] [c] = c [gteqi a b]
+evalprim GtI   [a, b] [c] = c [gti   a b]
+evalprim EqI   [a, b] [c] = c [equ   a b]
+
+    -- String Concatenation
 evalprim ConcatS [DString a, DString b] [c] = c [DString $ a <> b]
 
-evalprim    EShow    [DInt i]  [c] = c [DString . C8.pack . show $ i]
-evalprim    EShow   [DBool b]  [c] = c [DString . C8.pack . show $ b]
-evalprim    EShow [DString s]  [c] = c [DString . C8.pack . show $ s]
-evalprim    Err [DString e] [c] = error $ "ERROR: " ++ show e
+    -- Error & ToString
+evalprim EShow    [DInt i] [c] = c [DString . C8.pack . show $ i]
+evalprim EShow   [DBool b] [c] = c [DString . C8.pack . show $ b]
+evalprim EShow [DString s] [c] = c [DString . C8.pack . show $ s]
+evalprim Err   [DString e]   _ = error $ "ERROR: " ++ show e
 
 evalprim a b _ = error $ show (a,b)
 

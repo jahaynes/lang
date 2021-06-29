@@ -7,13 +7,15 @@ import CpsTypes
 
 import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Char8 as C8
-import Data.Word                             (Word64)
+import           Data.Word                   (Word64)
 
 type S = ByteString
 
 data Loc = Loc Word64 deriving Eq
 
-data Store s = Store Loc (Loc -> DValue s) (Loc -> Int)
+data Store s = Store Loc
+                     (Loc -> DValue s)
+                     (Loc -> Int)
 
 data Answer s = Answer (DValue s) deriving Show
 
@@ -31,7 +33,9 @@ instance Show s => Show (DValue s) where
 type Env s = Val s -> DValue s
 
 -- Vee turns a Cps Value into a Denotable Value
-vee :: Env S -> Val S -> DValue S
+-- Constants are left as is
+-- Variables are looked up from the environment
+vee :: Env s -> Val s -> DValue s
 vee   _   (VInt i)    = DInt i
 vee   _   (VBool b)   = DBool b
 vee   _   (VString s) = DString s
@@ -104,12 +108,15 @@ ee (CPrimOp op args argDests ks) env store =
                 store
 
     where
-    evaluateContinuation :: Cexp S -> [DValue S] -> Store S -> Answer S
-    evaluateContinuation k vs store =
+    evaluateContinuation :: Cexp S
+                         -> [DValue S]
+                         -> Store S
+                         -> Answer S
+    evaluateContinuation k vs store' =
 
         let env' = bindn env argDests vs
 
-        in ee k env' store
+        in ee k env' store'
 
 -- Lookup a boolean b, then evaluate the true- or false-continuation
 ee (CSwitch b t f) env store =

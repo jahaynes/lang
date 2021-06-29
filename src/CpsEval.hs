@@ -61,9 +61,16 @@ env0 = \k -> error $ unwords [ "Could not find"
 cpsEval :: [Val S]    -- list of CPS vars
         -> Cexp S     -- a continuation expr
         -> [DValue S] -- list of denotable vals
-        -> Store S    -- a store
         -> Answer S
-cpsEval vs e ds = ee e (bindn env0 vs ds)
+cpsEval vs expr ds =
+
+    -- Prepare an empty store
+    let store = undefined
+
+    -- Prepare an environment by binding vars to values
+        env' = bindn env0 vs ds
+
+    in ee expr env' store
 
 --p34. Ee takes the denotation of a CPS expr
 ee :: Cexp S

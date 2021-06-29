@@ -120,7 +120,7 @@ runWithCpsSemantics topLevelEnv = do
       print val
 
     C8.putStrLn "\n * Will try to Cps Eval: *"
-    print $ cpsEval vars'' mainExpr vals'' undefined
+    print $ cpsEval vars'' mainExpr vals''
 
     {- TODO: Toplevels which are not constants,
        functions or main can not yet refer to one another.
@@ -130,7 +130,7 @@ runWithCpsSemantics topLevelEnv = do
     where
     cpsEvaluateNonMainExpression :: (ByteString, Cexp ByteString) -> (Val ByteString, DValue ByteString)
     cpsEvaluateNonMainExpression (name, expr) =
-      let Answer val = cpsEval [] expr [] undefined
+      let Answer val = cpsEval [] expr []
       in (VVar name, val)
 
 runWithBetaReduction :: Bool -> SourceMap ByteString -> TopLevelEnv ByteString -> IO ()

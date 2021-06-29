@@ -30,6 +30,8 @@ data COp = EShow
          | AddI
          | SubI
          | MulI
+         | DivI
+         | ModI
          | EqI
          | LtEqI
          | LtI
@@ -43,6 +45,8 @@ fromBinOp L.EqI     = EqI
 fromBinOp L.AddI    = AddI
 fromBinOp L.SubI    = SubI
 fromBinOp L.MulI    = MulI
+fromBinOp L.DivI    = DivI
+fromBinOp L.ModI    = ModI
 
 fromBinOp L.LtEqI   = LtEqI
 fromBinOp L.LtI     = LtI

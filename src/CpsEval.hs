@@ -101,7 +101,7 @@ ee (CPrimOp op args argDests ks) env store =
     in evalprim op
                 argValues
                 continuations
-		store
+                store
 
     where
     evaluateContinuation :: Cexp S -> [DValue S] -> Store S -> Answer S
@@ -136,6 +136,8 @@ evalprim :: COp                                 -- Operator
 evalprim AddI [DInt i, DInt j] [c] = overflow (\() -> i + j) c
 evalprim SubI [DInt i, DInt j] [c] = overflow (\() -> i - j) c
 evalprim MulI [DInt i, DInt j] [c] = overflow (\() -> i * j) c
+evalprim DivI [DInt i, DInt j] [c] = overflow (\() -> i `div` j) c
+evalprim ModI [DInt i, DInt j] [c] = overflow (\() -> i `mod` j) c
 
     -- Comparisons
 evalprim LtEqI [a, b] [c] = c [lteqi a b]

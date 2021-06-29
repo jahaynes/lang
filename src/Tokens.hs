@@ -21,6 +21,9 @@ data Token s = LParen
              | Plus
              | Minus
              | Times
+             | Div
+             | Mod
+
              | If
              | Then
              | Else

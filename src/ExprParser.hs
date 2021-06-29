@@ -27,7 +27,7 @@ productTerm :: (Eq s, Show s) => Parser [(SourcePos, Token s)] (SourcePos, Expr 
 productTerm = (apply >>= \(sp, a) -> mullishOp >>= \(_, op) -> productTerm >>= \(_, b) -> pure (sp, EBinPrimOp op a b))
           <|> apply
     where
-    mullishOp = mulI
+    mullishOp = mulI <|> divI <|> modI
 
 apply :: (Eq s, Show s) => Parser [(SourcePos, Token s)] (SourcePos, Expr s)
 apply = do
@@ -151,14 +151,20 @@ ifThenElse = do
     (_,  c) <- parseExpr
     pure (sp, IfThenElse a b c)
 
-mulI :: Eq s => Parser [(SourcePos, Token s)] (SourcePos, BinOp)
-mulI = token Times <&> \(sp, _) -> (sp, MulI)
-
 addI :: Eq s => Parser [(SourcePos, Token s)] (SourcePos, BinOp)
 addI = token Plus <&> \(sp, _) -> (sp, AddI)
 
 subI :: Eq s => Parser [(SourcePos, Token s)] (SourcePos, BinOp)
 subI = token Minus <&> \(sp, _) -> (sp, SubI)
+
+mulI :: Eq s => Parser [(SourcePos, Token s)] (SourcePos, BinOp)
+mulI = token Times <&> \(sp, _) -> (sp, MulI)
+
+divI :: Eq s => Parser [(SourcePos, Token s)] (SourcePos, BinOp)
+divI = token Div <&> \(sp, _) -> (sp, DivI)
+
+modI :: Eq s => Parser [(SourcePos, Token s)] (SourcePos, BinOp)
+modI = token Mod <&> \(sp, _) -> (sp, ModI)
 
 stitch :: Eq s => Parser [(SourcePos, Token s)] (SourcePos, BinOp)
 stitch = token TStitch <&> \(sp, _) -> (sp, ConcatS)

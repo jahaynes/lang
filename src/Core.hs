@@ -36,6 +36,8 @@ data UnOp = EShow
 data BinOp = AddI
            | SubI
            | MulI
+           | DivI
+           | ModI
            | EqI
 
            | LtEqI

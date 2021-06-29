@@ -17,6 +17,8 @@ instance Pretty PrettyBinOp where
     pretty _ (PrettyBinOp AddI)    = simple "+"
     pretty _ (PrettyBinOp SubI)    = simple "-"
     pretty _ (PrettyBinOp MulI)    = simple "*"
+    pretty _ (PrettyBinOp DivI)    = simple "/"
+    pretty _ (PrettyBinOp ModI)    = simple "%"
     pretty _ (PrettyBinOp EqI)     = simple "=="
     pretty _ (PrettyBinOp ConcatS) = simple "++"
     pretty _ (PrettyBinOp LtEqI)   = simple "<="

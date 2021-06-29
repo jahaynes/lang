@@ -69,6 +69,8 @@ lexer = do
                   <|> (Plus         <$ char   '+')
                   <|> (Minus        <$ char   '-')
                   <|> (Times        <$ char   '*')
+                  <|> (Div          <$ char   '/')
+                  <|> (Mod          <$ char   '%')
 
                   <|> (TLessEq      <$ string "<=")
                   <|> (TLessThan    <$ char   '<')

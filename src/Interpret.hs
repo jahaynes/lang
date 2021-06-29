@@ -56,6 +56,8 @@ eval (TopLevelEnv topLevelEnv) sourceMap = loop
   step (EBinPrimOp AddI    (ETerm    (LitInt a))   (ETerm  (LitInt b))) = changed $ ETerm    (LitInt $  a + b)
   step (EBinPrimOp SubI    (ETerm    (LitInt a))   (ETerm  (LitInt b))) = changed $ ETerm    (LitInt $  a - b)
   step (EBinPrimOp MulI    (ETerm    (LitInt a))   (ETerm  (LitInt b))) = changed $ ETerm    (LitInt $  a * b)
+  step (EBinPrimOp DivI    (ETerm    (LitInt a))   (ETerm  (LitInt b))) = changed $ ETerm    (LitInt $  a `div` b)
+  step (EBinPrimOp ModI    (ETerm    (LitInt a))   (ETerm  (LitInt b))) = changed $ ETerm    (LitInt $  a `mod` b)
   
   step (EBinPrimOp LtI     (ETerm    (LitInt a))   (ETerm  (LitInt b))) = changed $ ETerm   (LitBool $ a <  b)
   step (EBinPrimOp LtEqI   (ETerm    (LitInt a))   (ETerm  (LitInt b))) = changed $ ETerm   (LitBool $ a <= b)

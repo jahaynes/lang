@@ -17,15 +17,19 @@ parseExpr = (sumTerm >>= \(sp, a) -> compOp >>= \(_, op) -> parseExpr >>= \(_, b
 
 -- Next lowest precedence
 sumTerm :: (Eq s, Show s) => Parser [(SourcePos, Token s)] (SourcePos, Expr s)
-sumTerm = (productTerm >>= \(sp, a) -> summishOp >>= \(_, op) -> sumTerm >>= \(_, b) -> pure (sp, EBinPrimOp op a b))
-      <|> productTerm
+sumTerm = do
+    (sp, e) <- productTerm
+    es      <- many (summishOp >>= \(_, op) -> productTerm >>= \(_, b) -> pure (op, b))
+    pure (sp, foldl (\a (o, b) -> EBinPrimOp o a b) e es)
     where
-    summishOp = stitch <|> addI <|> subI --TODO will stitch be mistaken for +?
+    summishOp = stitch <|> addI <|> subI
 
 -- etc..
 productTerm :: (Eq s, Show s) => Parser [(SourcePos, Token s)] (SourcePos, Expr s)
-productTerm = (apply >>= \(sp, a) -> mullishOp >>= \(_, op) -> productTerm >>= \(_, b) -> pure (sp, EBinPrimOp op a b))
-          <|> apply
+productTerm = do
+    (sp, e) <- apply
+    es      <- many (mullishOp >>= \(_, op) -> apply >>= \(_, b) -> pure (op, b))
+    pure (sp, foldl (\a (o, b) -> EBinPrimOp o a b) e es)
     where
     mullishOp = mulI <|> divI <|> modI
 

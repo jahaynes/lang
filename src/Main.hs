@@ -5,7 +5,6 @@ module Main where
 import Alphabetise
 import Core
 import CpsEval
-import CpsPretty
 import CpsTransform
 import DataTypes
 import Interpret
@@ -13,13 +12,11 @@ import LambdaLift
 import Lexer
 import LexState
 import Parser
-import Pretty
 import PrettyExpr
 import PrettyTopLevel
 import SourceMap
 import Tokens
 import TopLevelParser
-import TopLevelTypeCheck
 
 import CpsTypes
 
@@ -113,11 +110,13 @@ runWithCpsSemantics sourceMap topLevelEnv = do
     print ("main", mainExpr)
     mapM_ print nonMainExprs
 
-    C8.putStrLn "\n * CPS Pretty: *"
-    let x = CpsPretty sourceMap mainExpr
-        cpsPrettyMain = Pretty.paren $ pretty 0 x
-    putStrLn cpsPrettyMain
-    writeFile "cps_pretty" cpsPrettyMain
+{-
+    C8.putStrLn "\n * JS Pretty: *"
+    let x = JsPretty sourceMap mainExpr
+        jsPrettyMain = Pretty.paren $ pretty 0 x
+    putStrLn jsPrettyMain
+    writeFile "js_pretty" jsPrettyMain
+-}
 
     let (vars', vals') = unzip (map cpsEvaluateNonMainExpression nonMainExprs)
         vars''         = vars ++ vars'

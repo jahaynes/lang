@@ -1,4 +1,4 @@
-module CpsPretty where
+module Backends.JsPretty where
 
 import CpsTypes
 import Pretty
@@ -8,15 +8,15 @@ import Data.ByteString.Char8 (ByteString, unpack)
 import Data.List (intercalate)
 import Text.Printf
 
-data CpsPretty =
-    CpsPretty (SourceMap ByteString) (Cexp ByteString) deriving Show
+data JsPretty =
+    JsPretty (SourceMap ByteString) (Cexp ByteString) deriving Show
 
-instance Pretty CpsPretty where
-    pretty n (CpsPretty sm cfix@CFix{})       = prettyCFix n sm cfix
-    pretty n (CpsPretty sm cApp@CApp{})       = prettyCApp n sm cApp
-    pretty n (CpsPretty sm cPrimOp@CPrimOp{}) = prettyCPrimOp n sm cPrimOp
-    pretty n (CpsPretty sm cSwitch@CSwitch{}) = prettyCSwitch n sm cSwitch
-    pretty n (CpsPretty sm cHalt@CHalt{})     = prettyCHalt n sm cHalt
+instance Pretty JsPretty where
+    pretty n (JsPretty sm cfix@CFix{})       = prettyCFix n sm cfix
+    pretty n (JsPretty sm cApp@CApp{})       = prettyCApp n sm cApp
+    pretty n (JsPretty sm cPrimOp@CPrimOp{}) = prettyCPrimOp n sm cPrimOp
+    pretty n (JsPretty sm cSwitch@CSwitch{}) = prettyCSwitch n sm cSwitch
+    pretty n (JsPretty sm cHalt@CHalt{})     = prettyCHalt n sm cHalt
 
 prettyCFix :: Int
            -> SourceMap ByteString
@@ -26,7 +26,7 @@ prettyCFix n sm   (CFix    [] rest) = prettyCFix n sm rest
 prettyCFix n sm x@(CFix defns rest) = do
     let defns' = unlines $ map (prettyDefn n sm) defns
     simple $ intercalate "\n" [ defns'
-                              , paren $ pretty n (CpsPretty sm rest)]
+                              , paren $ pretty n (JsPretty sm rest)]
 -- right place?
 prettyCFix n sm cHalt@CHalt{} = prettyCHalt n sm cHalt
 prettyCFix n sm cPrimOp@CPrimOp{} = prettyCPrimOp n sm cPrimOp
@@ -41,7 +41,7 @@ prettyDefn n sm (fname, args, body) = do
     let topLine = printf "function %s(%s) {"
                          fname'
                          (intercalate ", " args')
-    let body' = paren $ pretty (n+2) (CpsPretty sm body)
+    let body' = paren $ pretty (n+2) (JsPretty sm body)
     intercalate "\n" [ replicate n ' ' <> topLine
                      , body'
                      , replicate n ' ' <> "}"
@@ -67,7 +67,7 @@ prettyCPrimOp n sm (CPrimOp op [a, b] [d] [k]) =
         a'  = prettyVar sm a
         b'  = prettyVar sm b
         ls = intercalate "\n" [ replicate n ' ' <> unwords ["var", d', "=", a', op', b' <> ";"]
-                              , paren $ pretty n (CpsPretty sm k)
+                              , paren $ pretty n (JsPretty sm k)
                               ]
     in simple ls
 
@@ -77,7 +77,7 @@ prettyCPrimOp n sm (CPrimOp op [a] [d] [k]) =
         d'  = prettyVar sm d
         a'  = prettyVar sm a
         ls  = intercalate "\n" [ replicate n ' ' <> unwords ["var", d', "=", op', a' <> ";"]
-                               , paren $ pretty n (CpsPretty sm k)
+                               , paren $ pretty n (JsPretty sm k)
                                ]
     in simple ls
 
@@ -86,8 +86,8 @@ prettyCPrimOp n _ x = error $ show ("prettyCPrimOp", n, x)
 prettyCSwitch :: Int -> SourceMap ByteString -> Cexp ByteString -> (IsCompound, String)
 prettyCSwitch n sm (CSwitch b tk fk) =
 
-    let tk' = paren $ pretty (n+2) (CpsPretty sm tk)
-        fk' = paren $ pretty (n+2) (CpsPretty sm fk)
+    let tk' = paren $ pretty (n+2) (JsPretty sm tk)
+        fk' = paren $ pretty (n+2) (JsPretty sm fk)
     in simple $ intercalate "\n" [ replicate n ' ' <> printf "if (%s) {" (prettyVar sm b)
                                  , tk'
                                  , replicate n ' ' <> "} else {"

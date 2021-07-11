@@ -13,10 +13,10 @@ executable lang
   main-is:             Main.hs
 
   other-modules:       Alphabetise
+                       Backends.JsPretty
                        Combinators
                        Core
                        CpsEval
-                       CpsPretty
                        CpsTransform
                        CpsTypes
                        DataTypes

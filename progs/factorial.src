@@ -1,12 +1,8 @@
-z = \f. (\x. f (\v. x x v))
-        (\x. f (\v. x x v))
-
-fact_fix h a n =
-  if 0 == n
-    then a
-    else h (n * a) (n - 1)
-
 fact x =
-   z fact_fix 1 x
+  let go a n =
+    if n == 0
+      then a
+      else go (n * a) (n - 1)
+    in go 1 x
 
 main = fact 30

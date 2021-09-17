@@ -40,9 +40,10 @@ desugarDataTypesState (TopLevel defs) =
         let params    = prodVars ++ sumVars
             nthSumVar = sumVars !! nth
             core      = ETerm (Var nthSumVar)
-            rhs       = foldl EApp core (map (ETerm . Var) prodVars)
-            body      = foldr ELam rhs params
-        in (dc, body)
+            -- rhs       = foldl EApp core (map (ETerm . Var) prodVars)
+            -- body      = foldr ELam rhs params
+            vars = map (ETerm . Var) prodVars
+        in (dc, error "makeDataConsFun")
 
     -- Generates [n, c] from the top example
     genProdVars :: DataCons ByteString -> State Int (ByteString, [ByteString])

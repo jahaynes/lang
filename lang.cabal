@@ -13,16 +13,16 @@ executable lang
   main-is:             Main.hs
 
   other-modules:       Alphabetise
-                       Backends.JsPretty
+                       Cleanup
                        Combinators
                        Core
-                       CpsEval
+                       CpsClosureConvert
+                       CpsLang
+                       CpsPrint
                        CpsTransform
-                       CpsTypes
                        DataTypes
                        ExprParser
                        Interpret
-                       LambdaLift
                        LexState
                        Lexer
                        Parser
@@ -35,8 +35,6 @@ executable lang
                        State
                        Tokens
                        TopLevelParser
-                       TopLevelTypeCheck
-                       TypeCheck
                        TypeTypes
 
   build-depends:       base,

@@ -3,12 +3,13 @@
 module Main where
 
 import Alphabetise
+import Cleanup
 import Core
-import CpsEval
+import CpsClosureConvert
 import CpsTransform
+import CpsPrint
 import DataTypes
 import Interpret
-import LambdaLift
 import Lexer
 import LexState
 import Parser
@@ -17,8 +18,6 @@ import PrettyTopLevel
 import SourceMap
 import Tokens
 import TopLevelParser
-
-import CpsTypes
 
 import           Control.Monad               (forM_, when)
 import           Data.ByteString             (ByteString)
@@ -53,14 +52,8 @@ findMain (TopLevelEnv topLevelEnv) =
     Just expr -> expr
     Nothing   -> error $ "No main definition found"
 
-isVerbose :: [String] -> Bool
-isVerbose ["-v"] = True
-isVerbose      _ = False
-
 main :: IO ()
 main = do
-
-    verbose <- isVerbose <$> getArgs
 
     i <- C8.getContents
     showRaw i
@@ -69,11 +62,13 @@ main = do
     C8.putStrLn " * Tokens (Positional information elided) *"
     print $ map snd spTokens
 
-    let TopLevel defs = parse spTokens
+    let (TopLevel defs) = parse spTokens
     C8.putStrLn "\n * Top-level definitions *"
     mapM_ print defs
 
-    let (defs', sourceMap@(SourceMap sm)) = alphabetise defs
+    let cleanedUp = map cleanup defs
+
+    let (defs', sourceMap@(SourceMap sm)) = alphabetise cleanedUp
     C8.putStrLn "\n * Top-level definitions (alphabetised) *"
     mapM_ print defs'
 
@@ -90,58 +85,17 @@ main = do
     C8.putStrLn "\n * Top-level environment with data constructors (pretty) *"
     print (PrettyTopLevel sourceMap topLevelEnv)
 
-    C8.putStrLn "\n * Lifting recursive lambdas *"
-    liftedTle <- lambdaLiftTopLevel topLevelEnv
+    let cps = cpsLangify topLevelEnv
+    C8.putStrLn "\n * Cps transform applied *"
+    mapM_ render cps
 
-    C8.putStrLn "\n * Lambda lift resulted in (pretty) *"
-    print (PrettyTopLevel sourceMap liftedTle)
-    
-    runWithBetaReduction verbose sourceMap liftedTle
+    C8.putStrLn "\n * Converting closures *"
+    closureConvert cps
 
-    runWithCpsSemantics sourceMap liftedTle
+    runWithBetaReduction sourceMap topLevelEnv
 
-runWithCpsSemantics :: SourceMap ByteString -> TopLevelEnv ByteString -> IO ()
-runWithCpsSemantics sourceMap topLevelEnv = do
-
-    C8.putStrLn "\n * Will try to CPS *"
-    let (vars, nonMainExprs, mainExpr, vals) = cpsTransformTopLevel topLevelEnv
-
-    C8.putStrLn "\n * Transformed to: *"
-    print ("main", mainExpr)
-    mapM_ print nonMainExprs
-
-{-
-    C8.putStrLn "\n * JS Pretty: *"
-    let x = JsPretty sourceMap mainExpr
-        jsPrettyMain = Pretty.paren $ pretty 0 x
-    putStrLn jsPrettyMain
-    writeFile "js_pretty" jsPrettyMain
--}
-
-    let (vars', vals') = unzip (map cpsEvaluateNonMainExpression nonMainExprs)
-        vars''         = vars ++ vars'
-        vals''         = vals ++ vals'
-    C8.putStrLn "\n * Toplevels evaluated to: *"
-    forM_ (zip vars'' vals'') $ \(VVar var, val) -> do
-      C8.putStr $ var <> ": "
-      print val
-
-    C8.putStrLn "\n * Will try to Cps Eval: *"
-    print $ cpsEval vars'' mainExpr vals''
-
-    {- TODO: Toplevels which are not constants,
-       functions or main can not yet refer to one another.
-
-       Will need to build a call graph to resolve this.
-     -}
-    where
-    cpsEvaluateNonMainExpression :: (ByteString, Cexp ByteString) -> (Val ByteString, DValue ByteString)
-    cpsEvaluateNonMainExpression (name, expr) =
-      let Answer val = cpsEval [] expr []
-      in (VVar name, val)
-
-runWithBetaReduction :: Bool -> SourceMap ByteString -> TopLevelEnv ByteString -> IO ()
-runWithBetaReduction verbose sourceMap topLevelEnv = do
+runWithBetaReduction :: SourceMap ByteString -> TopLevelEnv ByteString -> IO ()
+runWithBetaReduction sourceMap topLevelEnv = do
 
     let mainExpr = findMain topLevelEnv
     C8.putStrLn "\n * Main declaration located *"
@@ -150,7 +104,8 @@ runWithBetaReduction verbose sourceMap topLevelEnv = do
         logs   = init evald
         result = last evald
 
-    when verbose $ do
+    -- verbose
+    when True $ do
         C8.putStrLn "\n * Logs (Pretty) *"
         mapM_ (\l -> (putStrLn . show . PrettyExpr sourceMap $ l) >> putStrLn "") logs
 

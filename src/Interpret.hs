@@ -9,7 +9,7 @@ import           Data.Monoid                 ((<>))
 
 import Core
 import PrettyExpr
-import SourceMap    (SourceMap)
+import SourceMap as SM    (SourceMap, lookup)
 
 eval :: TopLevelEnv ByteString -> SourceMap ByteString -> Expr ByteString -> [Expr ByteString]
 eval (TopLevelEnv topLevelEnv) sourceMap = loop
@@ -21,16 +21,20 @@ eval (TopLevelEnv topLevelEnv) sourceMap = loop
 
   step :: Expr ByteString -> Changed (Expr ByteString)
 
-  step (EApp (ELam v dest) src) =
-      changed $ subst v src dest
+  step (EApp (ELam [] dest) _src) =
+      changed dest
+
+  step (EApp (ELam (v:vs) dest) (s:ss)) =
+      let dest' = subst v s dest
+      in changed $ EApp (ELam vs dest') ss
+
+  step (EApp (ETerm (Var f)) xs) =
+      case L.lookup f topLevelEnv of
+          Nothing -> error $ unwords ["Cannot find", show f, "in env", show (SM.lookup f sourceMap), "**", show topLevelEnv]
+          Just f' -> changed (EApp f' xs)
 
   step (ELet a b c) =
     changed $ subst a b c
-
-  step (EApp e1 e2) =
-    ((\e1' -> EApp e1' e2 ) <$> step e1) `orElse`
-    ((\e2' -> EApp e1  e2') <$> step e2) `orElse`   --TODO is this line unnecessary?
-    unchanged
 
   step (IfThenElse (ETerm (LitBool b)) t f) = if b then changed t else changed f
   step (IfThenElse p t f) = 
@@ -40,7 +44,7 @@ eval (TopLevelEnv topLevelEnv) sourceMap = loop
   step (ETerm (Var v)) = 
     case L.lookup v topLevelEnv of
       Just tlExpr -> changed tlExpr
-      Nothing     -> error $ show v ++ " not in scope!"
+      Nothing     -> error $ show v ++ " not in scope! " ++ (show (SM.lookup v sourceMap))
 
   step (ETerm (DCons dc)) = 
     case L.lookup dc topLevelEnv of
@@ -84,7 +88,10 @@ eval (TopLevelEnv topLevelEnv) sourceMap = loop
   step (EUnPrimOp EShow e)                     = (EUnPrimOp EShow <$> step e)
     `orElse` (error $ "Could not reduce to showable: " ++ show (PrettyExpr sourceMap e))
 
-  step e = error $ "Do not know how to reduce: " ++ show (PrettyExpr sourceMap e)
+  step e = error $ unlines [ "Do not know how to reduce: "
+                           , show (PrettyExpr sourceMap e)
+                           , show e
+                           ]
 
 subst :: (Eq s, Show s) => s -> Expr s -> Expr s -> Expr s
 -- x[x := N]    ≡ N
@@ -96,7 +103,7 @@ subst x y e@(ETerm (Var v)) | x == v    = y
 subst _ _ l@(ETerm _) = l
 
 -- (M1 M2)[x := N]  ≡ (M1[x := N]) (M2[x := N])
-subst x y (EApp a b) = EApp (subst x y a) (subst x y b)
+subst x y (EApp a bs) = EApp (subst x y a) (map (subst x y) bs)
 
 -- Assuming works like app
 subst x y (IfThenElse p t f) = IfThenElse (subst x y p) (subst x y t) (subst x y f)
@@ -106,15 +113,21 @@ subst x y (EUnPrimOp op e) = EUnPrimOp op (subst x y e)
 -- Assuming works like app
 subst x y (EBinPrimOp op a b) = EBinPrimOp op (subst x y a) (subst x y b)
 
-subst x y l@(ELam v b)
+subst x y l@(ELam vs b)
+
+    -- No change
     -- (λx.M)[x := N]   λx.M
-    | x == v = l
+    | L.elem x vs = l
+
+    -- Change
     -- (λy.M)[x := N] ≡ λy.(M[x := N]), if x ≠ y, provided y ∉ FV(N)
-    | otherwise = ELam v (subst x y b)
+    | otherwise = ELam vs (subst x y b)
 
 subst x y l@(ELet a b c)
     | x == a = l
     | otherwise = ELet a (subst x y b) (subst x y c)
+
+subst a b c = error $ unlines ["Couldn't sub", show a, show b, show c]
 
 type Changed a = Maybe a
 

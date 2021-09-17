@@ -46,13 +46,16 @@ alphabetise defns =
         descope a
         pure $ ELet a' b' c'
 
-    go (ELam v b) = do
-        v' <- scope v
-        b' <- go b
-        descope v
-        pure $ ELam v' b'
+    go (ELam vs b) = do
+        vs' <- mapM scope vs
+        b'  <- go b
+        mapM_ descope vs
+        pure $ ELam vs' b'
 
-    go (EApp a b) = EApp <$> go a <*> go b
+    go (EApp a bs) = do
+        a'  <- go a
+        bs' <- mapM go bs
+        pure $ EApp a' bs'
 
     go (EUnPrimOp op e) = EUnPrimOp op <$> go e
 

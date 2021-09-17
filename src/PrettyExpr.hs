@@ -28,13 +28,13 @@ instance Pretty PrettyExpr where
             c' = paren . pretty 0 . PrettyExpr sm $ c
         in compound ["let", a', "=", b', "in", c']
 
-    pretty _ (PrettyExpr sm (ELam v body)) = let v' = SM.lookupDef v sm
-                                                 lam' = unwords [ "\\" <> unpack v' <> "." 
-                                                                , paren . pretty 0 . PrettyExpr sm $ body
-                                                                ]
+    pretty _ (PrettyExpr sm (ELam vs body)) = let vs'  = map (\v -> SM.lookupDef v sm) vs
+                                                  lam' = unwords [ "\\" <> unwords (map unpack vs') <> "." 
+                                                                 , paren . pretty 0 . PrettyExpr sm $ body
+                                                                 ]
                                              in simple $ concat ["(", lam', ")"]
-    pretty _ (PrettyExpr sm (EApp a b)) = let [a', b'] = map (paren . pretty 0 . PrettyExpr sm) [a, b]
-                                          in compound [a', b']
+    pretty _ (PrettyExpr sm (EApp a bs)) = let (a':bs') = map (paren . pretty 0 . PrettyExpr sm) (a:bs)
+                                           in compound (a':bs')
 
     pretty _ (PrettyExpr sm (EUnPrimOp op e)) = let op' = paren . pretty 0 $ PrettyUnOp op
                                                     e'  = paren . pretty 0 . PrettyExpr sm $ e

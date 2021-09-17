@@ -1,0 +1,13 @@
+
+truth x =
+  True
+
+false y =
+  False
+
+main =
+  let t = truth 2 in
+  let f = false 3 in
+  if t + f
+       then 1
+       else 0

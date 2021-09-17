@@ -79,5 +79,5 @@ parseFunDef = do
     let vars = map snd negs
     _         <- token SingleEq
     (_, expr) <- parseExpr
-    let lam = schoenfinkel vars expr
+    let lam = ELam vars expr
     pure (sp, FunDef name lam)

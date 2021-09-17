@@ -37,7 +37,7 @@ apply :: (Eq s, Show s) => Parser [(SourcePos, Token s)] (SourcePos, Expr s)
 apply = do
     (sp, e) <- nonApply
     es      <- map snd <$> many (nonApplyRighterThan sp)
-    pure (sp, foldl EApp e es)
+    pure (sp, EApp e es)
 
 -- TODO how does this work and the simpler implementation doesn't work? backtracking? try?
 -- TODO dedupe using the impl in Combinators
@@ -68,9 +68,6 @@ term = do
 
 variable :: Show s => Parser [(SourcePos, Token s)] (SourcePos, Term s)
 variable = lower <&> \(sp, v) -> (sp, Var v)
-
-schoenfinkel :: [s] -> Expr s -> Expr s
-schoenfinkel vs body = foldr ELam body vs
 
 token :: Eq s => Token s -> Parser [(SourcePos, Token s)] (SourcePos, Token s)
 token x =
@@ -111,7 +108,7 @@ lambda = do
     params    <- map (unvar . snd) <$> many1 variable
     _         <- token Dot
     (_, body) <- parseExpr
-    pure (sp, schoenfinkel params body)
+    pure (sp, ELam params body)
 
 -- Let/Letrec/Fix
 elet :: (Eq s, Show s) => Parser [(SourcePos, Token s)] (SourcePos, Expr s)
@@ -123,7 +120,7 @@ elet = do
     _         <- token In
     (_, c)    <- parseExpr
     let (a:vars') = map (unvar . snd) negs
-        lam = schoenfinkel vars' b
+        lam = ELam vars' b
     pure (sp, ELet a lam c)
 
 unvar :: Show s => Term s -> s

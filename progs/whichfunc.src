@@ -1,0 +1,11 @@
+
+add2 x = x + 2
+
+minus2 x = x - 2
+
+foo a = \b -> a + b
+
+main =
+  let bigger = True in
+  let f = if bigger then add2 else minus2 in
+  f 1

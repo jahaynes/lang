@@ -1,5 +1,5 @@
-v_1 v_2 =
-  let v_3 v_4 = v_2 + v_4
-  in v_3 3
-
-main = v_1 2
+main =
+  let a = 1 in
+  let b = 2 in
+  let cl x = a + b + x
+  in cl 3

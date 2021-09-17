@@ -6,5 +6,5 @@ choose funToUse incBy =
          then (\x. incBy + x * x)
          else err "Unknown function"
 
-main = choose "square" 2 3
-     + choose "double" 1 4
+main = (choose "square" 2) 3
+     + (choose "double" 1) 4

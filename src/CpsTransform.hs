@@ -1,151 +1,168 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module CpsTransform where
+module CpsTransform (cpsLangify) where
 
-import CpsTypes
+import Core
+import CpsLang
+import CpsPrint
+import State
 
-import           Core (TopLevelEnv (..))
-import qualified Core as L
-import           CpsEval
-import           State
-
-import           Control.Monad               (zipWithM)
 import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Char8 as C8
+import           Data.List                   (intercalate)
+import           Data.Set                    (Set, (\\))
+import qualified Data.Set as S
+import           Text.Printf                 (printf)
 
-{- Plain top level functions are currently mixed into main,
-   to support mutual recursion.
-   Perhaps they could be exported separately, so that
-   top-level expressions could refer to them  -}
-cpsTransformTopLevel :: TopLevelEnv ByteString
-                     -> ( [Val ByteString]
-                        , [(ByteString, Cexp ByteString)]
-                        , Cexp ByteString
-                        , [DValue ByteString]
-                        )
-cpsTransformTopLevel (TopLevelEnv topLevelEnv) = do
+data CpsConv =
+    CpsConv { contNum :: !Int
+            , lifted  :: ![(S, Val)]
+            }
 
-    let (mainExpr, exprs, consts, funs) = categorise topLevelEnv
-
-        (mainExpr', exprs') = fst . runState (do
-
-                let (ons, oes) = unzip exprs
-                exprs' <- mapM (\e -> go e (pure . CHalt)) oes
-
-                let (mns, mes) = unzip funs
-                mainExpr' <- go (L.EFix mns mes mainExpr) (pure . CHalt)
-
-                pure (mainExpr', zip ons exprs')) $ 0
-
-    let (vars, vals) = unzip consts
-        vars' = map VVar vars
-        vals' = map termToDVals vals
-
-    (vars', exprs', mainExpr', vals')
-
-termToDVals :: L.Expr s -> DValue s
-termToDVals (L.ETerm    (L.LitInt i)) = DInt i
-termToDVals (L.ETerm   (L.LitBool b)) = DBool b
-termToDVals (L.ETerm (L.LitString s)) = DString s
-
-categorise :: [(ByteString, L.Expr ByteString)]
-           -> ( L.Expr ByteString
-              , [(ByteString, L.Expr ByteString)]
-              , [(ByteString, L.Expr ByteString)]
-              , [(ByteString, L.Expr ByteString)]
-              )
-categorise = go Nothing [] [] []
-   where
-   go (Just mMain) exprs consts funs                                [] = (mMain, exprs, consts, funs)
-   go            _ exprs consts funs           (("main", mainExpr):es) = go (Just mainExpr) exprs    consts    funs  es
-   go        mMain exprs consts funs          (e@(_, (L.ELam _ _)):es) = go          mMain  exprs    consts (e:funs) es
-   go        mMain exprs consts funs  (e@(_, L.ETerm (L.LitInt _)):es) = go          mMain  exprs (e:consts)   funs  es
-   go        mMain exprs consts funs (e@(_, L.ETerm (L.LitBool _)):es) = go          mMain  exprs (e:consts)   funs  es
-
-   go mMain exprs consts funs ((n, e):es) = go          mMain  ((n,e):exprs)    consts funs es
-
-   go _ _ _ _ ((n,e):_) = error . C8.unpack $ "Can a top-level '" <> n <> "' be: " <> (C8.pack $ show e) <> " ?"
-
-go :: L.Expr ByteString
-   -> (Val ByteString -> State Int (Cexp ByteString))
-   -> State Int (Cexp ByteString)
-
-go (L.ETerm (L.Var v)) c = c (VVar v)
-
--- Treat DCons like var? or function call?
-go (L.ETerm (L.DCons v)) c = c (VVar v)
-
-go (L.ETerm (L.LitInt i)) c = c (VInt i)
-go (L.ETerm (L.LitBool b)) c = c (VBool b)
-
-go (L.ETerm (L.LitString s)) c = c (VString s)
-
-go (L.ELam v e) c = do
-    k      <- genvar
-    lastly <- go e $ \e' ->
-        pure $ CApp k [e']
-    f      <- genvar
-    cf     <- c f
-    pure $ CFix [(f, [VVar v, k], lastly)] cf
-
-go (L.EApp a b) c = do
-    r   <- genvar
-    goa <- go a $ \a' ->
-             go b $ \b' ->
-               pure $ CApp a' [b', r]
-    x   <- genvar
-    cvx <- c x
-    pure $ CFix [(r, [x], cvx)] goa
-
--- Apply c to the result of a transformed Let expression
--- c (cps (Let x = y in z)
-go (L.ELet x y z) c = do
-    let lam = L.ELam x z
-    let app = L.EApp lam y
-    go app c
-
-go (L.EFix funNames funBodies restOfProg) c = do
-    functions'  <- zipWithM goFun funNames funBodies
-    restOfProg' <- go restOfProg c
-    pure $ CFix functions' restOfProg'
-
+cpsLangify :: TopLevelEnv S -> [(S, Val)]
+cpsLangify (TopLevelEnv tles) =
+    let (as, CpsConv _ bs) = runState (mapM go tles) (CpsConv 0 [])
+    in bs ++ as
     where
-    goFun fname (L.ELam fparam fbody) = do
-        c'     <- genvar
-        fbody' <- go fbody (\br -> pure $ CApp c' [br])
-        {- Run the body,
-           Apply c' to the result,
-           where c' is a fresh cont parameter
-           added to the function definition
-        -}
-        pure ( VVar fname
-             , [ VVar fparam, c']
-             , fbody'
-             )
+    go ("main", ELam vs body) = do
+        body' <- toCpsC body (CVar "halt")
+        pure ("main", CFunDef vs body')
 
-go (L.EUnPrimOp i e) c = do
-    w  <- genvar
-    cw <- c w
-    go e $ \e' ->
-        pure $ CPrimOp (fromUnOp i) [e'] [w] [cw]
+    -- A lambda is the 'usual' case
+    go (n, ELam vs body) = do
+        k <- genvar
+        body' <- toCpsC body (CVar k)
+        pure (n, CFunDef (vs++[k]) body')
 
-go (L.EBinPrimOp op a b) c = do -- Guess
-    w  <- genvar
-    cw <- c w
-    go a $ \a' ->
-        go b $ \b' ->
-            pure $ CPrimOp (fromBinOp op) [a', b'] [w] [cw]
+    -- A term can become a value
+    go (n, e@ETerm{}) = do
+        e' <- toVal e 
+        pure (n, e')
 
-go (L.IfThenElse p t f) c =
-    go p $ \p' -> do
-        t' <- go t c
-        f' <- go f c
-        pure $ CSwitch p' t' f'
+    -- any other expression can become a lambda of 0 
+    go (n, e) =
+        go (n, ELam [] e)
 
-go x _ = error $ "Non-exhaust go: " ++ show x
+toCpsC :: Expr S -> Val -> State CpsConv CExp
+toCpsC t@ETerm{} c = do
+    t' <- toVal t
+    pure $ CFunCall c [t']
 
-genvar :: State Int (Val ByteString)
+toCpsC e@ELam{} c = do
+    e' <- toVal e
+    pure $ CFunCall c [e']
+
+-- funcalls can be on S if this is used
+toCpsC (IfThenElse b t f) c = do
+    t' <- toCpsC t c
+    f' <- toCpsC f c
+    toCps b $ \b' -> pure $ CIfThenElse b' t' f'
+
+{-
+--This generates an extra lambda, and requires CFunCall to call a Val, not an S
+toCpsC (IfThenElse b t f) c = do
+    k    <- genvar
+    t'   <- toCpsC t (CVar k)
+    f'   <- toCpsC f (CVar k)
+    body <- toCps b $ \b' -> pure $ CIfThenElse b' t' f'
+    pure $ CFunCall (CFunDef [k] body) [c] -- generates a lambda
+    -- pure $ CLet k c body -- replace with let
+-}
+
+-- guess
+toCpsC (ELet a b body) c =
+    toCps b $ \b' ->
+        CLet a b' <$> toCpsC body c
+
+toCpsC (EBinPrimOp op a b) c =
+    toCps a $ \a' ->
+        toCps b $ \b' -> do
+            bv   <- genvar
+            rest <- toCpsC (ETerm (Var bv)) c
+            pure $ CBinOp bv op a' b' rest
+
+toCpsC (EUnPrimOp op a) c =
+    toCps a $ \a' -> do
+        bv   <- genvar
+        rest <- toCpsC (ETerm (Var bv)) c
+        pure $ CUnOp bv op a' rest
+
+
+toCpsC (EApp f xs) c =
+    toCps f $ \f' ->
+        toCpss xs $ \xs' ->
+            pure $ CFunCall f' (xs' ++ [c])
+
+toCps :: Expr S -> (Val -> State CpsConv CExp) -> State CpsConv CExp
+
+toCps t@ETerm{} k =
+    k =<< toVal t
+
+toCps e@ELam{} k =
+    k =<< toVal e
+
+toCps (EApp f xs) k = do
+
+    -- Prepare the lambda
+    rv      <- genvar
+    krv     <- k (CVar rv)
+    let lam = CFunDef [rv] krv
+
+    toCps f $ \f' ->
+        toCpss xs $ \xs' -> do
+            l    <- genvar
+            let fc = CFunCall f' (xs' ++ [CVar l])
+            pure $ CLet l lam fc -- HERE
+            -- stop putting the lambda straight into the list
+
+-- guess
+toCps (EBinPrimOp op a b) k =
+    toCps a $ \a' ->
+        toCps b $ \b' -> do
+            bv <- genvar
+            CBinOp bv op a' b' <$> k (CVar bv)
+
+toCpss :: [Expr S] -> ([Val] -> State CpsConv CExp) -> State CpsConv CExp
+toCpss     [] k = k []
+toCpss (e:es) k =
+    toCps e $ \e' ->
+        toCpss es $ \es' ->
+            k (e':es')
+
+toVal :: Expr S -> State CpsConv Val
+
+toVal (ETerm (Var v)) =
+    pure $ CVar v
+
+toVal (ETerm (LitInt i)) =
+    pure $ CLitInt i
+
+toVal (ETerm (LitBool t)) =
+    pure $ CLitBool t
+
+toVal (ETerm (LitString s)) =
+    pure $ CLitString s
+
+toVal (ELam vs body) = do
+
+    -- Prepare the lambda
+    k       <- genvar
+    body'   <- toCpsC body (CVar k)
+    let lam = CFunDef (vs ++ [k]) body'
+    pure lam
+
+asEnvParam :: Set S -> S
+asEnvParam ps = mconcat ["env{", C8.intercalate "," $ S.toList ps, "}"]
+
+genvar :: State CpsConv S
 genvar = do
-    n <- get
-    put (n + 1)
-    pure . VVar $ "var" <> C8.pack (show n) 
+    CpsConv n ls <- get
+    put $ CpsConv (n + 1) ls
+    pure . C8.pack $ "c" ++ show n
+
+liftToTopLevel :: Val -> State CpsConv Val
+liftToTopLevel val = do
+    tlname <- genvar
+    CpsConv n ls <- get
+    put $ CpsConv n ((tlname,val):ls)
+    pure $ CVar tlname

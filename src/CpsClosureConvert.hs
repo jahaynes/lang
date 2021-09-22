@@ -37,6 +37,8 @@ goTopLevel (n, CFunDef vs body) = do
     body' <- goExp body
     pure (n, CFunDef vs body')
 
+goTopLevel i@(n, CLitInt _) = pure i
+
 {-
 -- very rough attempt at avoiding f(createClosure g {v})
 -- (for just one var)

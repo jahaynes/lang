@@ -122,6 +122,17 @@ toCps (EBinPrimOp op a b) k =
             bv <- genvar
             CBinOp bv op a' b' <$> k (CVar bv)
 
+-- guess
+toCps (IfThenElse b t f) k = do
+    t' <- toCps t k
+    f' <- toCps f k
+    toCps b $ \b' -> pure $ CIfThenElse b' t' f'
+
+-- guess
+toCps (ELet a b body) k =
+    toCps b $ \b' ->
+        CLet a b' <$> toCps body k
+
 toCpss :: [Expr S] -> ([Val] -> State CpsConv CExp) -> State CpsConv CExp
 toCpss     [] k = k []
 toCpss (e:es) k =

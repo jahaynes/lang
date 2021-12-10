@@ -38,4 +38,7 @@ cleanup (FunDef n e) = FunDef n (goExp e)
     goExp t@ETerm{} =
         t
 
-    goExp x = error $ show ("goExp", x)
+    goExp x =
+        error $ show ("goExp", x)
+
+cleanup x = x

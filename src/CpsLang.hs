@@ -64,6 +64,9 @@ instance GetVariables CExp where
     getVariables (CBinOp bv _op a b rest) =
         getVariables a <> getVariables b <> (getVariables rest \\ S.singleton bv)
 
+    getVariables (CUnOp bv _op a rest) =
+        getVariables a <> (getVariables rest \\ S.singleton bv)
+
     getVariables (CLet a b c) =
         -- unsure whether a should be declared free if in b (recursion?)
         -- 'conversative' approach is to declare it for now I guess

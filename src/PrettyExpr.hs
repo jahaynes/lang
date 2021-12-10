@@ -47,7 +47,3 @@ instance Pretty PrettyExpr where
     pretty _ (PrettyExpr sm (IfThenElse p t f)) = let [p', t', f'] = map (paren . pretty 0 . PrettyExpr sm) [p, t, f]
                                                   in compound ["if", p', "then", t', "else", f']
 
-    pretty _ (PrettyExpr sm (EFix xs ys e)) = let xs' = unwords . map unpack $ xs
-                                                  ys' = map (paren . pretty 0 . PrettyExpr sm) ys
-                                                  e'  = paren . pretty 0 . PrettyExpr sm $ e
-                                              in compound $ ["fix", xs'] ++ ys' ++ [e']

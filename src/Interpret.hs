@@ -33,6 +33,14 @@ eval (TopLevelEnv topLevelEnv) sourceMap = loop
           Nothing -> error $ unwords ["Cannot find", show f, "in env", show (SM.lookup f sourceMap), "**", show topLevelEnv]
           Just f' -> changed (EApp f' xs)
 
+  step (EApp (ETerm (DCons dc)) xs) =
+      step (EApp (ETerm (Var dc)) xs)
+
+  step (EApp (EApp f xs) ys) =
+      case step (EApp f xs) of
+          Nothing -> error "No progress"
+          Just g  -> step (EApp g ys)
+
   step (ELet a b c) =
     changed $ subst a b c
 

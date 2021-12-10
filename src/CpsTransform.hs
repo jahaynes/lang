@@ -123,6 +123,12 @@ toCps (EBinPrimOp op a b) k =
             CBinOp bv op a' b' <$> k (CVar bv)
 
 -- guess
+toCps (EUnPrimOp op a) k =
+    toCps a $ \a' -> do
+        bv <- genvar
+        CUnOp bv op a' <$> k (CVar bv)
+
+-- guess
 toCps (IfThenElse b t f) k = do
     t' <- toCps t k
     f' <- toCps f k
@@ -153,6 +159,9 @@ toVal (ETerm (LitBool t)) =
 
 toVal (ETerm (LitString s)) =
     pure $ CLitString s
+
+toVal (ETerm (DCons d)) =
+    pure $ CVar d   -- is this wrong after alphabetisation?
 
 toVal (ELam vs body) = do
 

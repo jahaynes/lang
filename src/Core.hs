@@ -23,7 +23,6 @@ data Expr s = ETerm (Term s)
             | ELam [s] (Expr s)
             | EApp (Expr s) [Expr s]
             | ELet s (Expr s) (Expr s)
-            | EFix [s] [Expr s] (Expr s)
             | EUnPrimOp UnOp (Expr s)
             | EBinPrimOp BinOp (Expr s) (Expr s)
             | IfThenElse (Expr s) (Expr s) (Expr s)
@@ -48,10 +47,21 @@ data BinOp = AddI
            | ConcatS
 
 instance Show BinOp where
-    show AddI = "+"
-    show SubI = "-"
-    show MulI = "*"
-    show EqI  = "=="
+    show bo =
+        case bo of
+            AddI    -> "+"
+            SubI    -> "-"
+            MulI    -> "*"
+            DivI    -> "/"
+            ModI    -> "%"
+            EqI     -> "=="
+            LtEqI   -> "<="
+            LtI     -> "<"
+            GtEqI   -> ">="
+            GtI     -> ">"
+            ConcatS -> "++"
+
+
 
 data Term s = Var s             -- Var gets subst.  Check others when added.
             | DCons s           -- unsure if this is the right place.  also, subst?
